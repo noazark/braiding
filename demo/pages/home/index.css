@@ -1,0 +1,333 @@
+/* Home: a short welcome for first-time braiders, in the same neobrutal style as the tools */
+:root {
+  color-scheme: light;
+  --bg: #efefef;
+  --panel: #fff;
+  --ink: #000;
+  --mut: #333;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font:
+    500 17px/1.55 "Space Grotesk",
+    system-ui,
+    sans-serif;
+}
+.band {
+  max-width: 1120px;
+  margin: auto;
+  padding: clamp(24px, 5vw, 56px) max(4vw, 16px) 48px;
+}
+h1 {
+  font:
+    400 clamp(40px, 7vw, 76px)/1 "Archivo Black",
+    sans-serif;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+}
+h2 {
+  font:
+    400 26px/1.1 "Archivo Black",
+    sans-serif;
+  margin: 4px 0 8px;
+}
+.lede {
+  font-size: clamp(18px, 2.2vw, 22px);
+  max-width: 56ch;
+  margin: 0;
+}
+.hero {
+  margin-bottom: clamp(24px, 4vw, 40px);
+}
+.tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 22px;
+  margin-bottom: clamp(28px, 5vw, 48px);
+}
+.tool {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--panel);
+  color: inherit;
+  text-decoration: none;
+  border: 3px solid #000;
+  border-radius: 14px;
+  box-shadow: 7px 7px 0 #000;
+  padding: 20px 22px;
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s;
+}
+.tool:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 9px 9px 0 #000;
+}
+.tool:active {
+  transform: translate(4px, 4px);
+  box-shadow: 3px 3px 0 #000;
+}
+.tool:focus-visible {
+  outline: 3px solid #000;
+  outline-offset: 4px;
+}
+.tool p {
+  margin: 0 0 10px;
+}
+.kicker {
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 700;
+  border: 2px solid #000;
+  border-radius: 999px;
+  padding: 1px 10px;
+  background: #ffc21a;
+}
+.tool:nth-child(2) .kicker {
+  background: #3ccf6e;
+}
+.go {
+  font-weight: 700;
+}
+/* who made it */
+.made {
+  margin-top: 40px;
+  font-size: 15px;
+  color: var(--mut);
+}
+.made a {
+  color: #000;
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+.made a:hover {
+  text-decoration-thickness: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+/* ---- the tool cards' pictures ---- */
+/* each picture sits at the foot of its card, tucked behind the bottom edge (the card clips it) */
+.tool {
+  overflow: clip;
+  padding-bottom: 0;
+}
+.go {
+  margin-bottom: 6px;
+}
+/* the picture starts a fixed step below the link and fills the rest of the card, so both cards space it the same */
+.art {
+  flex: 1 0 0;
+  margin: 0 -22px;
+  min-height: 300px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  pointer-events: none;
+}
+/* hovering the explorer's card lifts its hand of cards a little; the simulator's disk stays put (its card moves, and the disk's own animation is enough) */
+#explorer-preview > * {
+  transition: translate 0.35s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.tool:hover #explorer-preview > *,
+.tool:focus-visible #explorer-preview > * {
+  translate: 0 -14px;
+}
+
+/* the simulator's card: a disk playing its pattern */
+.playing-preview {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-top: 12px;
+}
+.playing-preview svg {
+  width: 510px;
+  max-width: none;
+  flex: none;
+  height: auto;
+  overflow: visible;
+  display: block;
+}
+/* the moves over the disk's corner: an endless list that moves up one row per step, every row together.
+   The current move is black, the next one white, the one after that faded; rows fade out above and fade in below. */
+.pattern-steps {
+  position: absolute;
+  z-index: 1;
+  left: 22px;
+  top: 0;
+  width: 130px;
+  height: 136px;
+  pointer-events: none;
+  /* rows leaving over the top fade out at the list's edge instead of drifting up into the text above;
+    rows start 12px down so the current move is clear of the fade */
+  -webkit-mask: linear-gradient(transparent, #000 8px) no-repeat;
+  mask: linear-gradient(transparent, #000 8px) no-repeat;
+}
+.pattern-step {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 3px 9px;
+  background: #fff;
+  border: 2.5px solid #000;
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 #000;
+  font:
+    700 18px/1.2 ui-monospace,
+    Menlo,
+    monospace;
+  white-space: nowrap;
+  transform: translateY(calc(var(--o) * 40px + 12px));
+  transition:
+    transform 0.55s cubic-bezier(0.3, 0.9, 0.3, 1),
+    opacity 0.4s,
+    background 0.35s,
+    color 0.35s,
+    border-color 0.35s,
+    box-shadow 0.35s;
+}
+.pattern-step.now {
+  color: #fff;
+  background: #000;
+}
+.pattern-step.later {
+  opacity: 0.35;
+  color: #555;
+  border-color: #888;
+  box-shadow: 3px 3px 0 #888;
+}
+.pattern-step.hidden {
+  opacity: 0;
+}
+
+/* the explorer's card: a hand of pattern cards */
+.explorer-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin-top: 14px;
+}
+.explorer-preview .card.fanned {
+  --spread: 16deg;
+  --shift: 84px;
+  position: absolute;
+  left: 50%;
+  top: var(--top);
+  width: 178px;
+  --top: 20px;
+  transform-origin: 50% 120%;
+  transform: translateX(calc(-50% + var(--i) * var(--shift)))
+    translateY(var(--lift, 0px)) rotate(calc(var(--i) * var(--spread)));
+  transition:
+    transform 0.3s cubic-bezier(0.3, 1.4, 0.5, 1),
+    scale 0.25s cubic-bezier(0.3, 1.4, 0.5, 1);
+  pointer-events: auto;
+  animation: shimmy 4.2s ease-in-out infinite;
+  animation-delay: calc((var(--i) + 1) * 0.22s);
+}
+/* the middle card sits a little higher, like the top of a hand */
+.explorer-preview .card.fanned:nth-child(2) {
+  z-index: 1;
+  --lift: -22px;
+}
+/* the card under the pointer grows and comes to the front (the art is otherwise click-through, so the whole tool card stays a link) */
+.explorer-preview .card.fanned:hover {
+  scale: 1.1;
+  z-index: 2;
+}
+.explorer-preview .card .cv {
+  height: 190px;
+}
+.explorer-preview .meta > div:first-child {
+  white-space: nowrap;
+  overflow: hidden;
+}
+.explorer-preview .meta {
+  padding: 6px 8px 8px;
+  gap: 2px;
+}
+.explorer-preview .meta .t {
+  font-size: 13px;
+}
+.explorer-preview .meta .s {
+  display: none;
+}
+.explorer-preview .tag {
+  font-size: 10.5px;
+  padding: 0 6px;
+}
+.tool:hover .explorer-preview .card.fanned,
+.tool:focus-visible .explorer-preview .card.fanned {
+  --spread: 20deg;
+  --shift: 96px;
+}
+/* a quick wobble, then a long rest; each card a beat after the last */
+@keyframes shimmy {
+  0%,
+  62%,
+  100% {
+    rotate: 0deg;
+    translate: 0 0;
+  }
+  68% {
+    rotate: -3deg;
+    translate: 0 -7px;
+  }
+  74% {
+    rotate: 2.5deg;
+    translate: 0 -4px;
+  }
+  80% {
+    rotate: -1.2deg;
+    translate: 0 -1px;
+  }
+  86% {
+    rotate: 0deg;
+    translate: 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .explorer-preview .card.fanned {
+    animation: none;
+  }
+}
+/* narrow screens: a slightly smaller hand and disk (the outer edges may tuck under the card sides) */
+@media (max-width: 460px) {
+  .explorer-preview .card.fanned {
+    width: 146px;
+    --spread: 13deg;
+    --shift: 66px;
+    --top: 20px;
+  }
+  .tool:hover .explorer-preview .card.fanned {
+    --spread: 16deg;
+    --shift: 74px;
+  }
+  .explorer-preview .card .cv {
+    height: 170px;
+  }
+  .playing-preview svg {
+    width: 450px;
+  }
+  .art {
+    min-height: 270px;
+  }
+  .pattern-steps {
+    left: 16px;
+  }
+  .pattern-step {
+    font-size: 16px;
+  }
+}

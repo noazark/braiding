@@ -1,0 +1,131 @@
+/* the small link row that ties the pages together */
+.sitenav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  font:
+    700 13px/1 "Space Grotesk",
+    system-ui,
+    sans-serif;
+}
+.sitenav a {
+  color: #000;
+  text-decoration: none;
+  border: 2px solid #000;
+  border-radius: 999px;
+  padding: 6px 11px;
+  background: #fff;
+  box-shadow: 2px 2px 0 #000;
+  white-space: nowrap;
+}
+.sitenav a:hover {
+  background: #e9e9e9;
+}
+.sitenav a:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+.sitenav a:focus-visible {
+  outline: 3px solid #000;
+  outline-offset: 3px;
+}
+
+/* the page header: title and site nav on one row, an optional subtitle below */
+/* the nav stays right-justified on the title's first line; a long title wraps instead of pushing it down */
+.pagehead-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: nowrap;
+}
+.pagehead-row h1 {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pagehead-row .sitenav {
+  flex: none;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+/* phones: stack the links so the title keeps most of the row */
+@media (max-width: 560px) {
+  .pagehead-row .sitenav {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    margin-top: 2px;
+  }
+}
+.pagehead .sub {
+  margin-top: 4px;
+}
+
+/* floating: stays at the top while the page scrolls, with a rule along its bottom once content scrolls
+   under it; scrolled well down, it slims to a compact bar.
+   The bar's background (::before) and bottom rule (::after) reach the window's edges with a spread
+   shadow trimmed to the bar's height: shadows don't widen the page, so nothing scrolls sideways. The
+   title and links stay in line with the page's content. */
+.pagehead.floating {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 10px 0;
+  transition: padding 0.2s;
+}
+.pagehead.floating::before,
+.pagehead.floating::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  clip-path: inset(0 -100vmax);
+}
+.pagehead.floating::before {
+  top: 0;
+  bottom: 0;
+  background: var(--bg, #efefef);
+  box-shadow: 0 0 0 100vmax var(--bg, #efefef);
+}
+.pagehead.floating::after {
+  bottom: 0;
+  height: 3px;
+  background: #000;
+  box-shadow: 0 0 0 100vmax #000;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.pagehead.floating h1 {
+  transition: font-size 0.2s;
+}
+.pagehead.floating.compact {
+  padding: 8px 0;
+}
+/* pinned with content scrolling under it: the rule shows */
+.pagehead.floating.stuck::after {
+  opacity: 1;
+}
+.pagehead.floating.compact h1 {
+  font-size: 22px;
+}
+/* compact: one line, everything centered on it */
+.pagehead.floating.compact .pagehead-row {
+  align-items: center;
+}
+.pagehead.floating.compact .pagehead-row > * {
+  margin-top: 0;
+}
+.pagehead-row > .pagehead-actions {
+  flex: none;
+  margin-top: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pagehead.floating,
+  .pagehead.floating::after,
+  .pagehead.floating h1 {
+    transition: none;
+  }
+}

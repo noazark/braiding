@@ -1,0 +1,80 @@
+/* Pattern cards: the explorer's grid, and the fan on the home page */
+.card {
+  background: var(--panel, #fff);
+  border: 3px solid #000;
+  box-shadow: 5px 5px 0 #000;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.12s;
+}
+.card.clickable {
+  cursor: pointer;
+}
+.card.clickable:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 #000;
+}
+.card:focus-visible {
+  outline: 3px solid #000;
+  outline-offset: 4px;
+}
+.card .cv {
+  height: 260px;
+  overflow: hidden;
+  border-bottom: 3px solid #000;
+  flex: none;
+}
+.card canvas {
+  display: block;
+}
+.cv canvas {
+  margin-top: -8px;
+}
+.meta {
+  padding: 9px 11px 11px;
+  display: grid;
+  gap: 4px;
+}
+.meta .t {
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.25;
+}
+.meta .s {
+  font-size: 12.5px;
+  color: var(--mut, #444);
+}
+.tag {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 2px solid #000;
+  border-radius: 999px;
+  padding: 0 7px;
+  margin-right: 4px;
+  background: #fff;
+}
+.tag.known {
+  background: var(--warn, #ffc21a);
+}
+.tag.simp {
+  background: #cfe3ff;
+}
+.tag.new {
+  background: var(--ok, #3ccf6e);
+}
+.tag.shape {
+  background: #fff;
+}
+.tag.liked {
+  background: #ff4a3d;
+  color: #fff;
+  vertical-align: top;
+}
+.tag .heart,
+.heart {
+  display: inline-block;
+  vertical-align: -0.125em;
+}

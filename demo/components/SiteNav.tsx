@@ -1,0 +1,20 @@
+const PAGES = [
+  { id: 'home', href: '../', label: 'Home' },
+  { id: 'simulator', href: '../simulator/', label: 'Braiding disk simulator' },
+  { id: 'explorer', href: '../explorer/', label: 'Braid explorer' },
+] as const;
+
+export type Page = (typeof PAGES)[number]['id'];
+
+/** Links to the other pages of the site. */
+export function SiteNav({ current }: { current: Page }) {
+  return (
+    <nav className="sitenav" aria-label="Site">
+      {PAGES.filter(p => p.id !== current).map(p => (
+        <a key={p.id} href={p.href}>
+          {p.id === 'home' ? 'Home' : p.label}
+        </a>
+      ))}
+    </nav>
+  );
+}

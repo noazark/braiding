@@ -1,0 +1,1151 @@
+/* Braiding disk simulator. Ported from the original single-file page; neobrutal skin. */
+/* VOICE: a calm workbench; the disk and the braid do the talking, the controls stay quiet
+   IDEA: a braiding disk on the table, with its braid laid out beside it
+   PICTURE: the disk itself, live, beside the unrolled strand chart
+   COLOR and TYPE: neobrutal; black and white with hard shadows so the threads carry all the color; Archivo Black + Space Grotesk
+   LAYOUT: disk panel | strand chart; controls under the disk */
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#ffffff, #0e1615);
+  --panel: light-dark(#f3f7f6, #152120);
+  --ink: light-dark(#13201f, #e7efed);
+  --mut: light-dark(#5b6b69, #93a6a3);
+  --foam: light-dark(#17605c, #1c4d4a);
+  --foam2: light-dark(#1f7a74, #26625e);
+  --line: light-dark(#dfe6e4, #24322f);
+  --acc: #e4572e;
+  --notch: var(--bg);
+  --chartbg: var(--foam);
+  --lcd: #fff;
+  --target: #fff;
+  --ctl: color-mix(in srgb, var(--ink) 6%, transparent);
+  --ctl2: color-mix(in srgb, var(--ink) 11%, transparent);
+  --r: 12px;
+  --rc: 10px;
+  --head: "Zen Maru Gothic", sans-serif;
+  --body: "Nunito Sans", system-ui, sans-serif;
+  --mono: ui-monospace, Menlo, monospace;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+/* ===== Neobrutal: chunky black outlines, hard offset shadows, flat loud color, keys that press into their shadow ===== */
+:root[data-skin="neobrutal"] {
+  --target: #000;
+  color-scheme: light;
+  --bg: #efefef;
+  --panel: #ffffff;
+  --ink: #000;
+  --mut: #333;
+  --foam: #ffffff;
+  --foam2: #f1f1f1;
+  --line: #000;
+  --acc: #000;
+  --chartbg: #ffffff;
+  --nb1: #000;
+  --nb2: #ffffff;
+  --r: 12px;
+  --rc: 10px;
+  --head: "Archivo Black", sans-serif;
+  --body: "Space Grotesk", sans-serif;
+  --mono: "Space Grotesk", ui-monospace, monospace;
+  --ctl: #fff;
+  --ctl2: #e9e9e9;
+}
+:root[data-skin="neobrutal"] body {
+  font-weight: 500;
+}
+:root[data-skin="neobrutal"] h1 {
+  font-weight: 400;
+  font-size: clamp(32px, 5vw, 52px);
+  letter-spacing: -0.02em;
+}
+:root[data-skin="neobrutal"] .sub {
+  color: #000;
+}
+:root[data-skin="neobrutal"] .card {
+  border: 3px solid #000;
+  box-shadow: 7px 7px 0 #000;
+  border-radius: 14px;
+}
+:root[data-skin="neobrutal"] button {
+  border: 2.5px solid #000;
+  box-shadow: 3px 3px 0 #000;
+  font-weight: 700;
+  color: #000;
+  transition:
+    transform 0.08s,
+    box-shadow 0.08s;
+}
+:root[data-skin="neobrutal"] button:hover {
+  background: var(--ctl2);
+}
+:root[data-skin="neobrutal"] button:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 #000;
+}
+:root[data-skin="neobrutal"] button.pri {
+  background: var(--acc);
+  color: #fff;
+}
+:root[data-skin="neobrutal"] .icon {
+  background: var(--panel);
+  border-radius: 10px;
+}
+:root[data-skin="neobrutal"] .play {
+  background: var(--acc);
+  color: #fff;
+  border-radius: 12px;
+  width: 52px;
+  height: 52px;
+}
+:root[data-skin="neobrutal"] .tb2 {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ghostbtn {
+  background: var(--nb2);
+}
+:root[data-skin="neobrutal"] .jump {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+:root[data-skin="neobrutal"] select,
+:root[data-skin="neobrutal"] input[type="number"] {
+  border: 2.5px solid #000;
+  border-radius: 10px;
+  background-color: var(--panel);
+  padding: 6px 10px;
+  box-shadow: 3px 3px 0 #000;
+  font-weight: 700;
+}
+:root[data-skin="neobrutal"] select {
+  background:
+    linear-gradient(45deg, transparent 50%, #000 50%) right 14px center/6px 6px
+      no-repeat,
+    linear-gradient(-45deg, transparent 50%, #000 50%) right 8px center/6px 6px
+      no-repeat,
+    var(--panel);
+  padding-right: 30px;
+}
+:root[data-skin="neobrutal"] textarea {
+  border: 2.5px solid #000;
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 3px 3px 0 #000;
+  font-weight: 600;
+}
+:root[data-skin="neobrutal"] textarea:focus {
+  background: #fff;
+  box-shadow: 3px 3px 0 #000;
+}
+:root[data-skin="neobrutal"] label {
+  color: #000;
+  font-weight: 700;
+}
+:root[data-skin="neobrutal"] .sw button:not(.erase) {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border-radius: 8px;
+  border: 2.5px solid #000;
+  box-shadow: 2px 2px 0 #000;
+  transform: none;
+}
+:root[data-skin="neobrutal"] .sw button[aria-pressed="true"]:not(.erase) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #000;
+}
+:root[data-skin="neobrutal"] .sw button.erase {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border-radius: 8px;
+  border: 2.5px solid #000;
+  box-shadow: 2px 2px 0 #000;
+  background: var(--panel);
+  color: #000;
+}
+:root[data-skin="neobrutal"] .scrollbox {
+  border: 3px solid #000;
+  border-radius: 10px;
+}
+:root[data-skin="neobrutal"]
+  input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 5px;
+  background: var(--nb2);
+  border: 2.5px solid #000;
+}
+:root[data-skin="neobrutal"] input[type="range"]::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #fff;
+  border: 2.5px solid #000;
+  box-shadow: 2px 2px 0 #000;
+  margin-top: -8.5px;
+}
+:root[data-skin="neobrutal"] .checklist .ic {
+  border: 2px solid #000;
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 2px 2px 0 #000;
+}
+:root[data-skin="neobrutal"] .checklist .ok .ic {
+  background: #3ccf6e !important;
+  color: #000;
+}
+:root[data-skin="neobrutal"] .checklist .info .ic {
+  background: #fff !important;
+  color: #000;
+}
+:root[data-skin="neobrutal"] .checklist .warn .ic {
+  background: #ffc21a !important;
+  color: #000;
+}
+:root[data-skin="neobrutal"] .checklist .err .ic {
+  background: #ff4a3d !important;
+  color: #fff;
+}
+:root[data-skin="neobrutal"] .tools,
+:root[data-skin="neobrutal"] .help {
+  border-top: 2.5px solid #000;
+}
+:root[data-skin="neobrutal"] .toks span.on {
+  color: #fff;
+  background: var(--nb1);
+  border: 2px solid #000;
+  padding: 0 4px;
+  border-radius: 5px;
+}
+:root[data-skin="neobrutal"] .status b {
+  color: #fff;
+  background: var(--nb1);
+  padding: 0 4px;
+  border: 2px solid #000;
+  border-radius: 5px;
+}
+
+* {
+  box-sizing: border-box;
+  min-width: 0;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.55 var(--body);
+  overflow-x: clip;
+  transition:
+    background 0.25s,
+    color 0.25s;
+}
+.band {
+  padding: clamp(20px, 3vw, 40px) max(4vw, 16px);
+  max-width: 1280px;
+  margin: auto;
+}
+h1 {
+  font: 700 clamp(28px, 4vw, 40px)/1.05 var(--head);
+  margin: 0 0 6px;
+  text-wrap: balance;
+}
+.sub {
+  color: var(--mut);
+  margin: 0 0 18px;
+  max-width: 70ch;
+}
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 18px;
+  align-items: stretch;
+}
+.chartcard {
+  display: flex;
+  flex-direction: column;
+}
+.chartcard .scrollbox {
+  flex: 1 1 0;
+  max-height: none;
+  min-height: 240px;
+}
+.card {
+  background: var(--panel);
+  border-radius: calc(var(--r) * 1.6);
+  padding: 16px;
+}
+.cap {
+  font-size: 13px;
+  color: var(--mut);
+  margin: 6px 2px 0;
+}
+#disk {
+  width: 100%;
+  aspect-ratio: 1;
+  display: block;
+  touch-action: none;
+  cursor: pointer;
+  user-select: none;
+  overflow: visible;
+}
+.scrollbox {
+  max-height: min(58vh, 560px);
+  overflow: auto;
+  border-radius: var(--r);
+  background: var(--foam);
+}
+canvas {
+  display: block;
+}
+.ctl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+/* controls: no boxes; soft tinted shapes, underlined fields */
+button,
+select,
+input,
+textarea {
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+}
+button {
+  display: inline-grid;
+  place-items: center;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0 14px;
+  border-radius: var(--rc);
+  border: 0;
+  background: var(--ctl);
+  cursor: pointer;
+  font-weight: 600;
+  transition:
+    background 0.15s,
+    transform 0.1s;
+}
+button:hover {
+  background: var(--ctl2);
+}
+button:active {
+  transform: translateY(1px);
+}
+button.pri {
+  background: var(--acc);
+  color: #fff;
+}
+button.pri:hover {
+  background: color-mix(in srgb, var(--acc) 88%, #000);
+}
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+.icon {
+  background: transparent;
+  min-width: 40px;
+  padding: 0;
+  border-radius: 50%;
+}
+.icon:hover {
+  background: var(--ctl);
+}
+.play {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--bg);
+}
+.play:hover {
+  background: color-mix(in srgb, var(--ink) 85%, var(--bg));
+}
+.play .pz {
+  display: none;
+}
+.play.on .pl {
+  display: none;
+}
+.play.on .pz {
+  display: block;
+}
+input[type="range"] {
+  flex: 1 1 140px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 28px;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 3px;
+  background: var(--ctl2);
+}
+input[type="range"]::-moz-range-track {
+  height: 3px;
+  border-radius: 3px;
+  background: var(--ctl2);
+}
+input[type="range"]::-moz-range-progress {
+  height: 3px;
+  border-radius: 3px;
+  background: var(--acc);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--acc);
+  margin-top: -6.5px;
+  border: 3px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--acc);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--acc);
+  border: 3px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--acc);
+}
+select,
+input[type="number"] {
+  border: 0;
+  border-bottom: 1.5px solid var(--line);
+  background: transparent;
+  border-radius: 0;
+  padding: 6px 2px;
+  min-height: 40px;
+  transition: border-color 0.15s;
+}
+select:hover,
+input[type="number"]:hover {
+  border-bottom-color: var(--mut);
+}
+select:focus,
+input[type="number"]:focus {
+  outline: 0;
+  border-bottom-color: var(--acc);
+}
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 22px;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--mut) 50%) right 8px center/5px
+      5px no-repeat,
+    linear-gradient(-45deg, transparent 50%, var(--mut) 50%) right 3px
+      center/5px 5px no-repeat;
+  cursor: pointer;
+}
+textarea {
+  width: 100%;
+  min-height: 76px;
+  font-family: var(--mono);
+  font-size: 15px;
+  resize: vertical;
+  border: 0;
+  border-radius: var(--rc);
+  background: var(--ctl);
+  padding: 10px 12px;
+  line-height: 1.5;
+}
+textarea:focus {
+  outline: 0;
+  background: var(--ctl2);
+  box-shadow: inset 0 -2px 0 var(--acc);
+}
+.status {
+  font-size: 15px;
+  margin-top: 8px;
+  min-height: 1.5em;
+  color: var(--mut);
+}
+.status b {
+  color: var(--acc);
+}
+.err {
+  color: var(--acc);
+  font-weight: 700;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mut);
+  display: grid;
+  gap: 2px;
+}
+.sw {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.sw button {
+  background: var(--c);
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  touch-action: none;
+  cursor: grab;
+  box-shadow: inset 0 0 0 1px #0003;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.sw button:hover {
+  transform: scale(1.12);
+}
+.sw button[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--panel),
+    0 0 0 4px var(--ink);
+}
+.addc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #000;
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 #000;
+  cursor: pointer;
+  overflow: hidden;
+  font: 800 13px/1 var(--body);
+  color: #000;
+  background: conic-gradient(
+    from 0deg,
+    #ff2d2d,
+    #ff9f1a,
+    #ffe600,
+    #3ddc3d,
+    #00d5ff,
+    #2e5bff,
+    #b72dff,
+    #ff2dd2,
+    #ff2d2d
+  );
+}
+.addc::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #000;
+}
+.addc::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%);
+  background:
+    linear-gradient(#000, #000) center/7px 1.6px no-repeat,
+    linear-gradient(#000, #000) center/1.6px 7px no-repeat;
+}
+.addc {
+  font-size: 0;
+}
+.addc.set {
+  background: var(--pc);
+}
+.addc.on {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #000;
+}
+.addc:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+.addc:focus-within {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.addc input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  border: 0;
+  padding: 0;
+}
+.sw button i {
+  display: none;
+}
+.sw button.erase {
+  background: transparent;
+  color: var(--mut);
+  font-size: 18px;
+  line-height: 1;
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+.tools {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.tb2 {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ghostbtn {
+  background: transparent;
+  color: var(--mut);
+  font-size: 14px;
+  padding: 0 6px;
+}
+.ghostbtn:hover {
+  color: var(--ink);
+  background: transparent;
+  text-decoration: underline;
+}
+.hint {
+  margin: 8px 2px 14px;
+}
+.patrow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 4px;
+}
+.patrow textarea {
+  min-height: 52px;
+  flex: 1;
+}
+.patrow .pri {
+  align-self: flex-end;
+}
+.help {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.toks {
+  font-family: var(--mono);
+  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin-top: 8px;
+  color: var(--mut);
+}
+.toks span {
+  padding: 1px 0;
+  border-bottom: 2px solid transparent;
+}
+.toks span.on {
+  color: var(--ink);
+  border-bottom-color: var(--acc);
+}
+:root[data-skin] .pill {
+  min-height: 28px;
+  min-width: 0;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0 #000;
+  margin-top: 8px;
+  white-space: nowrap;
+}
+:root[data-skin] .pill.ok {
+  background: #3ccf6e;
+  color: #000;
+}
+:root[data-skin] .pill.warn {
+  background: #ffc21a;
+  color: #000;
+}
+:root[data-skin] .pill.err {
+  background: #ff4a3d;
+  color: #fff;
+}
+.chartwrap {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--r);
+}
+.chartwrap > .scrollbox {
+  flex: 1 1 0;
+  min-height: 0;
+}
+@media (max-width: 699px) {
+  .chartwrap {
+    flex: none;
+  }
+}
+/* the tab: a strip on the chart's bottom edge */
+:root[data-skin] .tab {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 2.5px solid #000;
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: bottom 0.25s ease;
+}
+:root[data-skin] .tab:active {
+  transform: translateX(-50%);
+}
+:root[data-skin] .tab.ok {
+  background: #3ccf6e;
+  color: #000;
+}
+:root[data-skin] .tab.warn {
+  background: #ffc21a;
+  color: #000;
+}
+:root[data-skin] .tab.err {
+  background: #ff4a3d;
+  color: #fff;
+}
+.tab .chev {
+  width: 7px;
+  height: 7px;
+  border-left: 2px solid currentColor;
+  border-top: 2px solid currentColor;
+  transform: rotate(45deg);
+  margin-top: 4px;
+  transition: transform 0.2s;
+}
+.chartwrap.open .tab .chev {
+  transform: rotate(225deg);
+  margin-top: -4px;
+}
+/* the drawer slides up over the bottom of the chart; the tab rides on top of it */
+.drawer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: min(62%, 420px);
+  z-index: 2;
+  background: var(--panel);
+  border: 3px solid #000;
+  border-radius: 0 0 var(--r) var(--r);
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+.chartwrap.open .drawer {
+  transform: none;
+}
+.chartwrap.open .tab {
+  bottom: min(62%, 420px);
+}
+.drawer-b {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 14px 16px;
+}
+.drawer h3 {
+  margin: 0 0 4px;
+  font: 700 16px/1.3 var(--body);
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawer,
+  .tab {
+    transition: none;
+  }
+}
+.checklist {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 15px;
+}
+.checklist li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.checklist .ic {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--mut);
+  margin-top: 2px;
+}
+.checklist .ok .ic {
+  background: #2f8f5b;
+}
+.checklist .warn .ic {
+  background: #c98a0b;
+}
+.checklist .err .ic {
+  background: var(--acc);
+}
+.check.bad summary {
+  color: var(--acc);
+}
+.jump {
+  min-height: 26px;
+  min-width: 0;
+  padding: 0 8px;
+  font-size: 13px;
+  margin-left: 4px;
+  background: transparent;
+  color: var(--acc);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+:root[data-skin] details.help.thr {
+  margin-top: 0;
+  border-top: 0;
+  padding-top: 0;
+}
+.thr[open] > summary {
+  margin-bottom: 6px;
+}
+:root:not(.compact) .thr > summary {
+  display: none;
+}
+.help summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+.help summary::-webkit-details-marker {
+  display: none;
+}
+.help summary::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--mut);
+  border-bottom: 1.5px solid var(--mut);
+  transform: rotate(-45deg);
+  margin: 0 12px 0 2px;
+  transition: transform 0.15s;
+}
+.help[open] summary::before {
+  transform: rotate(45deg);
+}
+.help table {
+  margin-top: 6px;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 15px;
+}
+td {
+  padding: 7px 8px;
+  border-top: 1px solid var(--line);
+  vertical-align: top;
+}
+td:first-child {
+  font-family: var(--mono);
+  white-space: nowrap;
+  font-weight: 600;
+}
+.chartcard .ctl label {
+  color: var(--mut);
+  font-size: 13px;
+}
+/* ===== Layout tiers. Sizes are fixed within a tier; extra space becomes margin, nothing stretches. =====
+   phone      < 700         stacked, page scrolls
+   tablet     700–999       disk panel (one column) | chart          iPad mini portrait
+   split      1000–1279     [disk | controls] | chart                iPad mini landscape, small laptops
+   desktop    1280–1679     same, larger disk
+   wide       ≥ 1680        same, largest disk; layout capped and centered
+   Short screens (< 820 tall) drop one disk size so the play controls stay in view. */
+:root {
+  --disk: 340px;
+  --chart: 300px;
+  --ctrl: 300px;
+  --band: 960px;
+  --h1: 28px;
+}
+/* each tier is sized to fit its narrowest width: 48 page padding + 20 gap + chart + 32 card padding + 48 inner gaps + ctrl + disk */
+@media (min-width: 1000px) {
+  :root {
+    --disk: 380px;
+    --chart: 280px;
+    --ctrl: 260px;
+    --band: 1240px;
+    --h1: 30px;
+  }
+}
+@media (min-width: 1280px) {
+  :root {
+    --disk: 480px;
+    --chart: 340px;
+    --ctrl: 300px;
+    --band: 1600px;
+    --h1: 34px;
+  }
+}
+@media (min-width: 1680px) {
+  :root {
+    --disk: 640px;
+    --chart: 400px;
+    --ctrl: 340px;
+    --band: 1840px;
+    --h1: 38px;
+  }
+}
+@media (min-width: 1280px) and (max-height: 819px) {
+  :root {
+    --disk: 420px;
+  }
+}
+@media (min-width: 1680px) and (max-height: 999px) {
+  :root {
+    --disk: 540px;
+  }
+}
+@media (min-width: 700px) {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    overflow: hidden;
+  }
+  .band {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 24px 18px;
+    max-width: var(--band);
+  }
+  .top {
+    flex: none;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: var(--h1);
+    margin: 0;
+  }
+  .sub {
+    margin: 0;
+    font-size: 14px;
+    max-width: 60ch;
+  }
+  .stage {
+    flex: 1 1 0;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) var(--chart);
+    gap: 20px;
+  }
+  .stage > .card {
+    min-height: 0;
+  }
+  .stage > .card:first-child {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .dkgrid {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .ctrlcol {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .patrow {
+    flex: 1 0 auto;
+    min-height: 84px;
+  }
+  .patrow textarea {
+    height: auto;
+    min-height: 84px;
+  }
+  .patrow .pri {
+    align-self: flex-start;
+  }
+  #disk {
+    width: var(--disk);
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  .chartcard .scrollbox {
+    min-height: 0;
+  }
+  .tools {
+    gap: 8px;
+  }
+  .sw {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  :root[data-skin="neobrutal"] .sw button:not(.erase),
+  :root[data-skin="neobrutal"] .sw button.erase {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    border-width: 2px;
+  }
+  .tb2 {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .ghostbtn {
+    padding: 0 8px;
+    font-size: 13px;
+  }
+}
+@media (min-width: 700px) and (max-width: 999px),
+  (min-width: 700px) and (max-height: 819px) {
+  .sub {
+    display: none;
+  }
+}
+/* split tiers: disk column fixed and centered, controls beside it scroll on their own */
+@media (min-width: 1000px) {
+  .stage > .card:first-child {
+    overflow: hidden;
+  }
+  .dkgrid {
+    --dgap: 32px;
+    --dctl: 114px;
+    --dsz: min(
+      var(--disk),
+      100cqh - var(--dctl) - 2 * var(--dgap),
+      100cqw - var(--ctrl) - 24px - 2 * var(--dgap)
+    );
+    container-type: size;
+    flex: 1 1 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: max-content minmax(var(--ctrl), 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0 24px;
+  }
+  .diskcol {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    padding: 0 var(--dgap);
+  }
+  /* safety: never wider than its column, so nothing is ever cut off */
+  /* the disk keeps a margin of at least --dgap on every side: it never runs closer to the top than to the sides */
+  /* the disk column hugs the disk with an even --dgap at the sides; spare width goes to the controls */
+  .diskcol #disk {
+    flex: none;
+    width: var(--dsz);
+    height: auto;
+    aspect-ratio: 1;
+    margin: 0 auto 18px;
+  }
+  .diskcol .ctl,
+  .diskcol .status {
+    width: var(--dsz);
+    margin-left: auto;
+    margin-right: auto;
+  }
+  :root[data-skin] .ctrlcol .tools {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+    row-gap: 12px;
+  }
+  .ctrlcol {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    min-height: 0;
+    padding: 2px 8px 8px 2px;
+    margin-right: -8px;
+  }
+}
+/* Phones: stacked, page scrolls */
+@media (max-width: 699px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .chartcard .scrollbox {
+    flex: none;
+    height: 62vh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

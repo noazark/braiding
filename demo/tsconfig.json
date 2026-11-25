@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "paths": { "kumihimo": ["../packages/kumihimo/src/index.ts"] }
+  },
+  "include": ["pages", "components", "hooks", "lib"]
+}

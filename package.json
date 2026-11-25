@@ -1,0 +1,30 @@
+{
+  "name": "braiding",
+  "private": true,
+  "description": "A braiding-disk simulator and braid explorer.",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "demo"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w demo",
+    "build": "npm run build -w kumihimo && npm run build -w demo",
+    "preview": "npm run preview -w demo",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p packages/kumihimo --noEmit && tsc -p demo --noEmit",
+    "check": "npm run typecheck && npm test && npm run build",
+    "format:css": "prettier --write \"demo/{pages,components,hooks,lib}/**/*.css\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.10",
+    "prettier": "^3.10.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.2"
+  }
+}

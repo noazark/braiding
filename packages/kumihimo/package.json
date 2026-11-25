@@ -1,0 +1,22 @@
+{
+  "name": "kumihimo",
+  "version": "0.1.0",
+  "description": "A pure, dependency-free engine for braiding disks: notation, simulation, braid words, pattern checks and classification.",
+  "keywords": ["braid", "braiding", "kumihimo", "braid-group", "marudai", "disk", "weaving"],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "src", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build"
+  }
+}
