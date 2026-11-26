@@ -102,7 +102,9 @@
   clip-path: inset(0 -100vmax);
 }
 .pagehead.floating::before {
-  top: 0;
+  /* reaches a little above the header too: browsers that let the page scroll up under their own
+     translucent top bar (Safari) would otherwise show the grid through a strip above it */
+  top: -80px;
   bottom: 0;
   background: var(--bg, #efefef);
   box-shadow: 0 0 0 100vmax var(--bg, #efefef);
