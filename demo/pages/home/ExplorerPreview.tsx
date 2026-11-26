@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { presets, seeded } from 'kumihimo';
 import { PatternCard } from '../../components/PatternCard';
-import { colorize, presetCard } from '../../lib/patternCards';
+import { colorize, presetCard, withColors } from '../../lib/patternCards';
 
 /** Three presets that look different from each other: a round cord, a weave and a card braid. */
 const PICKS: [id: string, seed: number][] = [
@@ -17,7 +17,7 @@ export function ExplorerPreview() {
       PICKS.flatMap(([id, seed]) => {
         const p = presets.find(x => x.id === id);
         const base = p && presetCard(p);
-        const card = base && presetCard(p, colorize(base.profile.strands, seeded(seed)));
+        const card = base && withColors(base, colorize(base.profile.strands, seeded(seed)));
         return card ? [card] : [];
       }),
     [],

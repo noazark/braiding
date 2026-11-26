@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { generators, refineCandidate } from 'kumihimo';
-import { KNOWN, cardFromFind, colorize, colorsOf, keyOf, matches, pickFamily, presetCards, waste, withColors, type Card, type Settings } from './model';
-import { loadFinds, saveFinds } from './storage';
+import { generators, presets, refineCandidate } from 'kumihimo';
+import { afterLoad } from '../../lib/afterLoad';
+import { KNOWN, cardFromFind, colorize, colorsOf, keyOf, knowPresets, matches, pickFamily, presetCardAt, presetStamp, waste, withColors, type Card, type Settings } from './model';
+import { loadFinds, loadPresetCards, saveFinds, savePresetCards } from './storage';
 
 /** Exploring is meant to surprise: fresh randomness each visit. */
 const random = Math.random;
@@ -16,21 +17,53 @@ const CAP = 40000;
  * responsive.
  */
 export function useExplorer(likes: ReadonlySet<string>) {
-  // the presets, then the finds saved from earlier visits; built once, not on every render
-  const [initial] = useState(() => {
-    const m = new Map<string, Card>(presetCards());
+  // the presets as saved from an earlier visit (if the presets and engine are unchanged), then the
+  // finds saved from earlier visits: both come back whole, with nothing to work out, so they show straight away
+  const [{ initial, presetsSaved }] = useState(() => {
+    const saved = loadPresetCards(presetStamp());
+    if (saved) knowPresets(saved);
+    const m = new Map<string, Card>(saved ?? []);
     for (const c of loadFinds()) if (!m.has(keyOf(c))) m.set(keyOf(c), c);
-    return m;
+    return { initial: m, presetsSaved: !!saved };
   });
   const found = useRef(initial);
   const [version, changed] = useReducer((n: number) => n + 1, 0);
+  /** Set when the finds change (not when presets arrive): there's something new to save. */
+  const dirty = useRef(false);
+
+  // not saved (first visit, or the presets or engine changed): the presets, profiled one at a time once
+  // the page has loaded (each can take tens of ms), placed ahead of the finds in their own order; a
+  // saved find that turns out to be a preset gives way to it. Once all are in, they're saved for next time.
+  useEffect(() => {
+    if (presetsSaved) return;
+    const cancels = presets.map((_, i) =>
+      afterLoad(() => {
+        const e = presetCardAt(i);
+        if (e && !found.current.get(e[0])?.known) {
+          const [key, card] = e;
+          const all = [...found.current];
+          found.current = new Map([...all.filter(([, c]) => c.known), [key, card] as const, ...all.filter(([k, c]) => !c.known && k !== key)]);
+          changed();
+        }
+        if (i === presets.length - 1)
+          savePresetCards(
+            presetStamp(),
+            [...found.current.values()].filter(c => c.known),
+          );
+      }),
+    );
+    return () => cancels.forEach(c => c());
+  }, [presetsSaved]);
 
   // keep the finds (not the presets) for next visit whenever they change; liked ones are always kept.
   // Saving writes every find (megabytes, at the limit), so it waits for a quiet second, and happens
   // straight away if the page is hidden or closed first.
+  const savedLikes = useRef(likes);
   useEffect(() => {
-    if (!version) return;
+    if (!dirty.current && savedLikes.current === likes) return;
     const save = () => {
+      dirty.current = false;
+      savedLikes.current = likes;
       clearTimeout(timer);
       removeEventListener('pagehide', save);
       saveFinds(
@@ -92,6 +125,7 @@ export function useExplorer(likes: ReadonlySet<string>) {
         setLatest(added);
         setSearching(null);
         busy.current = false;
+        dirty.current = true;
         changed();
         then?.(added);
       } else {
@@ -107,6 +141,7 @@ export function useExplorer(likes: ReadonlySet<string>) {
     const c = found.current.get(key);
     if (!c) return;
     found.current.set(key, withColors(c, colorize(c.profile.strands, random)));
+    dirty.current = true;
     changed();
   }, []);
 

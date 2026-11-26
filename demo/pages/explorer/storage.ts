@@ -64,3 +64,30 @@ export function saveFinds(finds: readonly Card[], keep?: ReadonlySet<string>): v
     /* not saved this time */
   }
 }
+
+const PRESETS_KEY = 'braid-explorer:presets:v1';
+
+/**
+ * The presets as pattern cards, saved from an earlier visit, if they were made from the same presets
+ * by the same engine (`stamp`; see {@link presetStamp}). Profiling them takes the better part of a
+ * second, so they're worked out once and kept.
+ */
+export function loadPresetCards(stamp: string): [string, Card][] | null {
+  try {
+    const data: unknown = JSON.parse(localStorage.getItem(PRESETS_KEY) ?? 'null');
+    if (!data || typeof data !== 'object' || (data as { stamp?: unknown }).stamp !== stamp) return null;
+    const cards = parseFinds(JSON.stringify((data as { cards?: unknown }).cards ?? null));
+    return cards.length ? cards.map(c => [keyOf(c), c]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Keep the presets' cards for next visit, under `stamp`. */
+export function savePresetCards(stamp: string, cards: readonly Card[]): void {
+  try {
+    localStorage.setItem(PRESETS_KEY, JSON.stringify({ stamp, cards }));
+  } catch {
+    /* not saved this time: they're worked out again next visit */
+  }
+}

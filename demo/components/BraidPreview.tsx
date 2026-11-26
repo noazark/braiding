@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { afterLoad } from '../lib/afterLoad';
 import { StrandChart } from './StrandChart';
 import { useElementSize } from '../hooks/useElementSize';
 import { useIsVisible } from '../hooks/useIsVisible';
@@ -19,6 +20,7 @@ export interface BraidPreviewProps {
    * Draw right away and keep it. Otherwise (the default) the chart is drawn only while the card is
    * near the screen, and let go again once it's scrolled well away: a long grid holds only the
    * canvases around what's on screen. Drawing one takes about a millisecond, so it's cheap to redraw.
+   * Draws wait their turn in the {@link afterLoad} queue: after the page loads, one per frame, ahead of background work.
    */
   readonly eager?: boolean;
 }
@@ -29,12 +31,20 @@ export function BraidPreview({ card, eager = false }: BraidPreviewProps) {
   const { width, height } = useElementSize(box);
   // drawn within 600px of the screen: ready just before it scrolls into view, gone once well past
   const near = useIsVisible(box, '600px 0px');
+  const want = !eager && near && width > 0;
+  /** This chart's turn in the draw queue has come. */
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (!want) return setReady(false);
+    // what's on screen comes before background work
+    return afterLoad(() => setReady(true), { first: true });
+  }, [want]);
   // the chart ends in a few blank pixels, and is shifted up 8px to hide the ones at its top: ask for
   // enough extra that the threads run past the bottom edge (the box clips the rest)
   const tall = (height || 260) + 40;
   return (
     <div className="cv" ref={box}>
-      {(eager || near) && width > 0 && (
+      {(eager || (want && ready)) && width > 0 && (
         <StrandChart
           timeline={runOf(card.setup).timeline}
           colors={colorsOf(card)}
