@@ -37,8 +37,11 @@ export interface ChartOptions {
   /** Mark this step and draw around it. */
   readonly playhead?: number;
   readonly style: ChartStyle;
-  /** CSS pixels: width, and the minimum height to fill. */
-  readonly size: { readonly w: number; readonly h: number };
+  /**
+   * CSS pixels: width, and the minimum height to fill. With `max`, the canvas is no taller than that:
+   * the chart is cut off there, so a small box doesn't hold a canvas full of rows no one sees.
+   */
+  readonly size: { readonly w: number; readonly h: number; readonly max?: number };
 }
 
 export interface ChartResult {
@@ -122,7 +125,7 @@ export function renderChart(canvas: HTMLCanvasElement, cfg: ChartOptions): Chart
   }
   const H = tl.steps;
   const { lw, RW, pad, rows, Yr, delta } = L;
-  const height = Yr.at(-1)! + L.top;
+  const height = Math.min(Yr.at(-1)! + L.top, cfg.size.max ?? Infinity);
 
   // canvas at device resolution
   const dpr = devicePixelRatio || 1;

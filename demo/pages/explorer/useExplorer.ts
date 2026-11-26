@@ -25,13 +25,26 @@ export function useExplorer(likes: ReadonlySet<string>) {
   const found = useRef(initial);
   const [version, changed] = useReducer((n: number) => n + 1, 0);
 
-  // keep the finds (not the presets) for next visit whenever they change; liked ones are always kept
+  // keep the finds (not the presets) for next visit whenever they change; liked ones are always kept.
+  // Saving writes every find (megabytes, at the limit), so it waits for a quiet second, and happens
+  // straight away if the page is hidden or closed first.
   useEffect(() => {
-    if (version)
+    if (!version) return;
+    const save = () => {
+      clearTimeout(timer);
+      removeEventListener('pagehide', save);
       saveFinds(
         [...found.current.values()].filter(c => !c.known),
         likes,
       );
+    };
+    const timer = setTimeout(save, 1000);
+    addEventListener('pagehide', save);
+    return () => {
+      // a newer change replaces this save with its own
+      clearTimeout(timer);
+      removeEventListener('pagehide', save);
+    };
   }, [version, likes]);
   /** Patterns tried so far in the search under way, or null when idle. */
   const [searching, setSearching] = useState<number | null>(null);

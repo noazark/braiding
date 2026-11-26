@@ -17,12 +17,14 @@ export interface StrandChartProps {
   /** Width to draw at, and the minimum height to fill, in CSS pixels. */
   readonly width: number;
   readonly minHeight: number;
+  /** The tallest the canvas may be, in CSS pixels: the chart is cut off there. */
+  readonly maxHeight?: number;
   /** Called after each redraw, e.g. to scroll the playhead into view. */
   readonly onRender?: (result: ChartResult) => void;
 }
 
 /** The strand chart on a canvas. Redraws whenever any prop changes. */
-export function StrandChart({ timeline, colors, columnWidth, steepness, corner, playhead, style, width, minHeight, onRender }: StrandChartProps) {
+export function StrandChart({ timeline, colors, columnWidth, steepness, corner, playhead, style, width, minHeight, maxHeight, onRender }: StrandChartProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const after = useLatest(onRender);
   const colorKey = colors.join(',');
@@ -37,9 +39,9 @@ export function StrandChart({ timeline, colors, columnWidth, steepness, corner, 
       corner,
       playhead,
       style: JSON.parse(styleKey) as ChartStyle,
-      size: { w: width, h: minHeight },
+      size: { w: width, h: minHeight, max: maxHeight },
     });
     after.current?.(result);
-  }, [timeline, colorKey, columnWidth, steepness, corner, playhead, styleKey, width, minHeight, after]);
+  }, [timeline, colorKey, columnWidth, steepness, corner, playhead, styleKey, width, minHeight, maxHeight, after]);
   return <canvas ref={canvas} />;
 }

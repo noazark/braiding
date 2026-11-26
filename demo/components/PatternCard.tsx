@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import './pattern-card.css';
 import { turnsLabel } from '../lib/messages';
 import { FAMILY_LABEL, isRound, waste, type Card } from '../lib/patternCards';
@@ -21,7 +22,7 @@ export interface PatternCardProps {
 }
 
 /** A pattern card: the braid's strand chart, tags, its name and a line of facts. */
-export function PatternCard({ card, onOpen, className, style, eager, isNew, liked, children }: PatternCardProps) {
+export const PatternCard = memo(function PatternCard({ card, onOpen, className, style, eager, isNew, liked, children }: PatternCardProps) {
   const { profile: p, known, family, simplifiedFrom } = card;
   const interactive = onOpen
     ? {
@@ -59,4 +60,4 @@ export function PatternCard({ card, onOpen, className, style, eager, isNew, like
       </div>
     </div>
   );
-}
+});

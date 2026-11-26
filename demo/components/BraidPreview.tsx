@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { StrandChart } from './StrandChart';
 import { useElementSize } from '../hooks/useElementSize';
-import { useInView } from '../hooks/useInView';
+import { useIsVisible } from '../hooks/useIsVisible';
 import { runOf } from '../lib/diskSetup';
 import { colorsOf, type Card } from '../lib/patternCards';
 
@@ -16,8 +16,9 @@ const STYLE = {
 export interface BraidPreviewProps {
   readonly card: Card;
   /**
-   * Draw right away. Otherwise (the default) the chart is drawn only once the card comes near the
-   * screen, so a long grid of cards costs nothing until it's scrolled to.
+   * Draw right away and keep it. Otherwise (the default) the chart is drawn only while the card is
+   * near the screen, and let go again once it's scrolled well away: a long grid holds only the
+   * canvases around what's on screen. Drawing one takes about a millisecond, so it's cheap to redraw.
    */
   readonly eager?: boolean;
 }
@@ -26,8 +27,11 @@ export interface BraidPreviewProps {
 export function BraidPreview({ card, eager = false }: BraidPreviewProps) {
   const box = useRef<HTMLDivElement>(null);
   const { width, height } = useElementSize(box);
-  // drawn once within 300px of the screen: ready just before it scrolls into view
-  const near = useInView(box, undefined, '300px 0px');
+  // drawn within 600px of the screen: ready just before it scrolls into view, gone once well past
+  const near = useIsVisible(box, '600px 0px');
+  // the chart ends in a few blank pixels, and is shifted up 8px to hide the ones at its top: ask for
+  // enough extra that the threads run past the bottom edge (the box clips the rest)
+  const tall = (height || 260) + 40;
   return (
     <div className="cv" ref={box}>
       {(eager || near) && width > 0 && (
@@ -39,9 +43,8 @@ export function BraidPreview({ card, eager = false }: BraidPreviewProps) {
           corner={1.5}
           style={STYLE}
           width={width}
-          // the chart ends in a few blank pixels, and is shifted up 8px to hide the ones at its top: ask for
-          // enough extra that the threads run past the bottom edge (the box clips the rest)
-          minHeight={(height || 260) + 40}
+          minHeight={tall}
+          maxHeight={tall}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PageHeader } from '../../components/PageHeader';
-import { PatternCard } from '../../components/PatternCard';
+import { PatternCard, type PatternCardProps } from '../../components/PatternCard';
 import { useScrolledPast } from '../../hooks/useScrolledPast';
 import { ExploreCard } from './components/ExploreCard';
 import { FeedOverlay } from './components/FeedOverlay';
@@ -8,6 +8,11 @@ import { FilterBar } from './components/FilterBar';
 import { DEFAULT_SETTINGS, NO_FILTERS, TRAITS, fitsTraits, inFilters, matches, randomSettings, traitOf, type Filters, type Settings, type TraitKey } from './model';
 import { useLikes } from './likes';
 import { useExplorer } from './useExplorer';
+
+/** A card in the grid. Takes its place and a stable `onOpenAt`, so it re-renders only when it changes. */
+const GridCard = memo(function GridCard({ index, onOpenAt, ...rest }: Omit<PatternCardProps, 'onOpen'> & { index: number; onOpenAt: (i: number) => void }) {
+  return <PatternCard {...rest} onOpen={useCallback(() => onOpenAt(index), [onOpenAt, index])} />;
+});
 
 /** Cards added to the grid at a time, as its end comes near the screen. */
 const PAGE = 24;
@@ -75,10 +80,11 @@ export function ExplorerApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ex.version, ex.entries, settings.shape, filters, viewLikes]);
 
-  const openAt = (i: number) => {
+  // stable, so the grid's cards (memoized) don't all re-render while a search ticks
+  const openAt = useCallback((i: number) => {
     setAt(i);
     setOpen(i);
-  };
+  }, []);
 
   // Explore's find opens straight into the feed (and the grid shows enough cards to include it)
   useEffect(() => {
@@ -182,13 +188,14 @@ export function ExplorerApp() {
           status={status}
         />
         {shown.map((e, i) => (
-          <PatternCard
+          <GridCard
             key={keys[i]}
+            index={i}
             card={e}
             isNew={ex.fresh.has(keys[i]!)}
             liked={likes.has(keys[i]!)}
             className={keys[i] === ex.latest ? 'fresh' : undefined}
-            onOpen={() => openAt(i)}
+            onOpenAt={openAt}
           />
         ))}
         {hasMore && <div className="more" ref={more} aria-hidden="true" />}
