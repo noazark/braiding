@@ -1,0 +1,10 @@
+/* The frame the tool pages share: the same width, gutters and top spacing on each, so the header
+   (and everything under it) sits in the same place from page to page. The bottom is each page's own. */
+.band {
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 18px;
+  padding-left: max(2.2vw, 14px);
+  padding-right: max(2.2vw, 14px);
+}

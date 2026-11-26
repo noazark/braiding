@@ -28,12 +28,7 @@ body {
     sans-serif;
 }
 .band {
-  max-width: 1600px;
-  margin: auto;
-  padding: 18px max(2.2vw, 14px) 40px;
-}
-.top {
-  margin: 0 0 14px;
+  padding-bottom: 40px;
 }
 /* the floating header's way back up, styled like the site nav's pills */
 .totop {
@@ -47,13 +42,6 @@ body {
 }
 .totop:active {
   transform: translate(2px, 2px);
-}
-h1 {
-  font:
-    400 clamp(26px, 3.4vw, 38px)/1.05 "Archivo Black",
-    sans-serif;
-  margin: 0 0 14px;
-  letter-spacing: -0.02em;
 }
 label {
   display: grid;

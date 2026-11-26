@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import './page.css';
 import './page-header.css';
 import { SiteNav, type Page } from './SiteNav';
 

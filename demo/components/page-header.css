@@ -31,7 +31,23 @@
   outline-offset: 3px;
 }
 
-/* the page header: title and site nav on one row, an optional subtitle below */
+/* the page header: title and site nav on one row, an optional subtitle below. The same size and
+   spacing on every page that has one. */
+.pagehead {
+  margin: 0 0 14px;
+  padding: 10px 0;
+}
+.pagehead h1 {
+  font:
+    400 clamp(26px, 3.4vw, 38px)/1.05 "Archivo Black",
+    sans-serif;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.pagehead .sub {
+  margin: 4px 0 0;
+  max-width: 70ch;
+}
 /* the nav stays right-justified on the title's first line; a long title wraps instead of pushing it down */
 .pagehead-row {
   display: flex;
@@ -58,9 +74,6 @@
     gap: 6px;
     margin-top: 2px;
   }
-}
-.pagehead .sub {
-  margin-top: 4px;
 }
 
 /* floating: stays at the top while the page scrolls, with a rule along its bottom once content scrolls
