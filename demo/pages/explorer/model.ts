@@ -1,5 +1,5 @@
 /** The explorer's own model: settings, the presets it starts with, and how finds are labeled. */
-import { pickOne, presets, profileNotation, randomInt, seeded, type Family, type Random } from 'kumihimo';
+import { pickOne, presets, profileNotation, randomInt, seeded, type Drift, type Family, type Random, type Weave } from 'kumihimo';
 import { colorize, isRound, keyOf, presetCard, type Card } from '../../lib/patternCards';
 
 export { FAMILY_LABEL, cardFromFind, colorize, colorsOf, isRound, keyOf, waste, withColors, type Card } from '../../lib/patternCards';
@@ -57,3 +57,44 @@ export function presetCards(): [string, Card][] {
 
 /** Whether a card shows under the Shape setting. */
 export const matches = (shape: Shape) => (c: Card) => shape === 'any' || (shape === 'round') === isRound(c);
+
+/** The filter bar's choices: which braids the grid shows, by their traits. Empty means no limit. */
+export interface Filters {
+  readonly liked: boolean;
+  readonly weave: ReadonlySet<Weave>;
+  readonly drift: ReadonlySet<Drift>;
+  readonly strands: ReadonlySet<number>;
+}
+
+/** A trait the filter bar offers chips for. */
+export type TraitKey = 'weave' | 'drift' | 'strands';
+export const TRAITS: readonly [TraitKey, string][] = [
+  ['weave', 'Weave'],
+  ['drift', 'Drift'],
+  ['strands', 'Threads'],
+];
+
+export const NO_FILTERS: Filters = { liked: false, weave: new Set(), drift: new Set(), strands: new Set() };
+
+export const isUnfiltered = (f: Filters): boolean => !f.liked && TRAITS.every(([k]) => f[k].size === 0);
+
+/** A card's value for a trait. */
+export const traitOf = (c: Card, k: TraitKey): string | number => c.profile.traits[k];
+
+/** Whether a card passes the trait chips (any chip within a trait, every trait with chips on). */
+export const fitsTraits = (f: Filters) => (c: Card): boolean =>
+  TRAITS.every(([k]) => f[k].size === 0 || (f[k] as ReadonlySet<string | number>).has(traitOf(c, k)));
+
+/** Whether a card shows under the filter bar. */
+export const inFilters = (f: Filters, likes: ReadonlySet<string>) => {
+  const traits = fitsTraits(f);
+  return (c: Card): boolean => (!f.liked || likes.has(keyOf(c))) && traits(c);
+};
+
+/** The same filters with one trait chip turned on or off. */
+export function toggleTrait(f: Filters, k: TraitKey, v: string | number): Filters {
+  const next = new Set<string | number>(f[k]);
+  if (next.has(v)) next.delete(v);
+  else next.add(v);
+  return { ...f, [k]: next };
+}

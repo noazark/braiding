@@ -490,3 +490,75 @@ button:disabled {
     animation: none;
   }
 }
+
+/* ---- the filter bar, under the header's title: narrows the grid by the braids' traits ---- */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+/* one trait's chips, after its label */
+.trait {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.trait-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mut);
+}
+.chip .heart {
+  vertical-align: -0.12em;
+}
+.filters .clear {
+  border: 0;
+  box-shadow: none;
+  background: none;
+  min-height: 0;
+  padding: 0;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.filters .clear:active {
+  transform: none;
+}
+.pagehead.floating.compact .filters {
+  margin-top: 8px;
+}
+.chip {
+  font-size: 13px;
+  min-height: 0;
+  padding: 5px 11px;
+  border-width: 2px;
+  border-radius: 999px;
+  box-shadow: 2px 2px 0 #000;
+  line-height: 1;
+  white-space: nowrap;
+}
+.chip:hover {
+  background: #e9e9e9;
+}
+.chip:active {
+  transform: translate(2px, 2px);
+}
+.chip[aria-pressed="true"] {
+  background: #000;
+  color: #fff;
+}
+.chip .n {
+  font-weight: 500;
+  opacity: 0.65;
+  margin-left: 2px;
+}
+/* a chip that would show nothing alongside the other filters: still there, but faded */
+.chip.empty:not([aria-pressed="true"]) {
+  opacity: 0.4;
+  box-shadow: none;
+}

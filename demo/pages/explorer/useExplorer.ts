@@ -42,12 +42,13 @@ export function useExplorer(likes: ReadonlySet<string>) {
   /** Braids found during this visit. Not saved: "New" means new since the page loaded. */
   const [fresh, setFresh] = useState<ReadonlySet<string>>(() => new Set());
 
-  /** Find one new braid that fits `s`; `then` gets its key (or null if none turned up). Ignored while a search runs. */
-  const findOne = useCallback((s: Settings, then?: (key: string | null) => void) => {
+  /** Find one new braid that fits `s` (and `also`, when given); `then` gets its key (or null if none turned up). Ignored while a search runs. */
+  const findOne = useCallback((s: Settings, then?: (key: string | null) => void, also?: (c: Card) => boolean) => {
     if (busy.current) return;
     busy.current = true;
     setNote('');
-    const fits = matches(s.shape);
+    const shapeFits = matches(s.shape);
+    const fits = (c: Card) => shapeFits(c) && (!also || also(c));
     let n = 0;
     const step = () => {
       const t0 = performance.now();
