@@ -105,13 +105,14 @@ const runs = new WeakMap<DiskSetup, Run>();
 
 /**
  * The setup's run. Made once per setup object and shared by everything that plays or draws it, so a
- * run's steps are worked out once. Unreadable notation gives a run with no moves, plus the error.
+ * run's steps are worked out once. Unreadable notation gives a run with no moves, plus the error;
+ * blank notation is just an empty pattern (no moves, no error).
  */
 export function runOf(s: DiskSetup): Run {
   let run = runs.get(s);
   if (!run) {
-    const parsed = parsePattern(s.pattern, s.slots);
-    const pattern = parsed.ok ? parsed.pattern : [];
+    const parsed = s.pattern.trim() ? parsePattern(s.pattern, s.slots) : null;
+    const pattern = parsed?.ok ? parsed.pattern : [];
     run = {
       timeline: new Timeline({
         slots: s.slots,
@@ -119,7 +120,7 @@ export function runOf(s: DiskSetup): Run {
         pattern,
       }),
       pattern,
-      error: parsed.ok ? null : parsed.error,
+      error: parsed && !parsed.ok ? parsed.error : null,
     };
     runs.set(s, run);
   }

@@ -1,13 +1,10 @@
-export interface NotationHelpProps {
-  readonly open: boolean;
-  readonly onSummaryClick: (e: React.MouseEvent) => void;
-}
+import type { Ref } from 'react';
+import { HelpDialog } from './HelpDialog';
 
-/** What each kind of move means. */
-export function NotationHelp({ open, onSummaryClick }: NotationHelpProps) {
+/** What each kind of move means, in a help dialog (the (?) next to Moves). */
+export function NotationHelp({ ref }: { ref: Ref<HTMLDialogElement> }) {
   return (
-    <details className="help" open={open}>
-      <summary onClick={onSummaryClick}>Notation help</summary>
+    <HelpDialog ref={ref} title="Writing moves">
       <table>
         <tbody>
           <tr>
@@ -35,6 +32,6 @@ export function NotationHelp({ open, onSummaryClick }: NotationHelpProps) {
       <p className="cap">
         Slots are numbered 1…N clockwise, slot 1 just right of the top. Separate moves with spaces or commas; the sequence repeats forever. Ctrl/⌘+Enter applies.
       </p>
-    </details>
+    </HelpDialog>
   );
 }

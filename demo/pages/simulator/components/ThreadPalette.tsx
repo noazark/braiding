@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { HelpButton, HelpDialog } from './HelpDialog';
 import { paletteIndex, type DiskThread } from '../../../lib/diskSetup';
 import { PALETTE } from '../../../lib/palette';
 import { ERASER, type Brush } from '../model';
@@ -10,14 +11,15 @@ export interface ThreadPaletteProps {
   /** Pointer down on a swatch: it may become a drag onto the disk. */
   readonly onSwatchPointerDown: (c: Brush, e: React.PointerEvent) => void;
   readonly onShuffle: () => void;
-  readonly onClear: () => void;
-  readonly open: boolean;
-  readonly onSummaryClick: (e: React.MouseEvent) => void;
 }
 
-/** The color swatches (palette, custom colors in use, a picker, the eraser) and disk-wide tools. */
-export function ThreadPalette({ threads, brush, onBrush, onSwatchPointerDown, onShuffle, onClear, open, onSummaryClick }: ThreadPaletteProps) {
+/**
+ * The disk's toolbar, under the disk: the eraser and color swatches (palette, custom colors in use, a
+ * picker), shuffling the colors, and a (?) that explains how to use them on the disk.
+ */
+export function ThreadPalette({ threads, brush, onBrush, onSwatchPointerDown, onShuffle }: ThreadPaletteProps) {
   const [picked, setPicked] = useState<string | null>(null);
+  const help = useRef<HTMLDialogElement>(null);
   const custom = [...new Set(threads.map(t => t.color).filter(c => paletteIndex(c) < 0))];
   const swatch = (c: string, label: string, className?: string) => (
     <button
@@ -37,10 +39,21 @@ export function ThreadPalette({ threads, brush, onBrush, onSwatchPointerDown, on
   );
   const pickedNew = !!picked && !custom.includes(picked);
   return (
-    <details className="help thr" open={open}>
-      <summary onClick={onSummaryClick}>Threads</summary>
+    <section className="thr" aria-label="Threads">
       <div className="tools">
         <div className="sw" role="toolbar" aria-label="Thread colors">
+          <button
+            className="erase"
+            aria-label="Remove threads"
+            title="Remove threads: click or drag onto a thread"
+            aria-pressed={brush === ERASER}
+            onPointerDown={e => {
+              onBrush(ERASER);
+              onSwatchPointerDown(ERASER, e);
+            }}
+          >
+            ×
+          </button>
           {PALETTE.map((c, i) => swatch(c, `Color ${i + 1}`))}
           {custom.map(c => swatch(c, `Custom color ${c}`, 'custom'))}
           <label
@@ -60,31 +73,18 @@ export function ThreadPalette({ threads, brush, onBrush, onSwatchPointerDown, on
               }}
             />
           </label>
-          <button
-            className="erase"
-            aria-label="Remove threads"
-            aria-pressed={brush === ERASER}
-            onPointerDown={e => {
-              onBrush(ERASER);
-              onSwatchPointerDown(ERASER, e);
-            }}
-          >
-            ×
-          </button>
         </div>
-        <span className="tb2">
-          <button className="ghostbtn" title="Give every thread a random color from the palette" onClick={onShuffle}>
-            Shuffle colors
-          </button>
-          <button className="ghostbtn" onClick={onClear}>
-            Clear disk
-          </button>
-        </span>
+        <button className="icon shuffle" title="Shuffle colors: give every thread a random color" aria-label="Shuffle colors" onClick={onShuffle}>
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 5h3.5c3 0 4 8 7 8H16M13.5 10.5 16 13l-2.5 2.5M2 13h3.5c1.2 0 2-1.2 2.7-2.6M10.3 7.6C11 6.2 11.8 5 13 5h3M13.5 2.5 16 5l-2.5 2.5" />
+          </svg>
+        </button>
+        <HelpButton label="How to add and move threads" onClick={() => help.current?.showModal()} />
       </div>
-      <p className="cap hint">
-        Drag a color onto a slot to add a thread. Drag a thread to another slot to move it (onto a filled slot to swap), or off the disk to remove it. Click a thread to
-        give it the selected color; with × selected, a click removes it.
-      </p>
-    </details>
+      <HelpDialog ref={help} title="Threads on the disk">
+        <p>Drag a color onto a slot to add a thread. Drag a thread to another slot to move it (onto a filled slot to swap), or off the disk to remove it.</p>
+        <p>Click a thread to give it the selected color; with × selected, a click removes it.</p>
+      </HelpDialog>
+    </section>
   );
 }

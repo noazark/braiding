@@ -1,4 +1,7 @@
-import { presetGroupNames, presets, type Pattern } from 'kumihimo';
+import { useRef } from 'react';
+import { presetGroupNames, presets } from 'kumihimo';
+import { HelpButton } from './HelpDialog';
+import { NotationHelp } from './NotationHelp';
 import { CUSTOM } from '../useDiskSetup';
 
 export interface PatternEditorProps {
@@ -9,38 +12,39 @@ export interface PatternEditorProps {
   readonly draft: string;
   readonly onDraft: (text: string) => void;
   readonly onApply: () => void;
+  /** Start over: take every thread off the disk and clear the moves. */
+  readonly onReset: () => void;
   /** Why the applied pattern couldn't be read, if it couldn't. */
   readonly error: string;
-  /** The applied pattern's tokens, the one being played highlighted. */
-  readonly pattern: Pattern;
-  readonly activeToken: number | null;
 }
 
 const groups = [...new Set(presets.map(p => p.group))];
 
-/** Choosing a preset or disk size, and writing the moves. */
-export function PatternEditor({ preset, onPreset, slots, onSlots, draft, onDraft, onApply, error, pattern, activeToken }: PatternEditorProps) {
+/** Choosing a preset, then the disk's size and moves as one group, with Apply and Reset under them. */
+export function PatternEditor({ preset, onPreset, slots, onSlots, draft, onDraft, onApply, onReset, error }: PatternEditorProps) {
+  const help = useRef<HTMLDialogElement>(null);
   return (
     <>
-      <div className="row">
-        <label style={{ flex: '1 1 220px' }}>
-          Preset
-          <select value={preset} onChange={e => onPreset(Number(e.target.value))}>
-            {groups.map(g => (
-              <optgroup key={g} label={presetGroupNames[g]}>
-                {presets.map((p, i) =>
-                  p.group === g ? (
-                    <option key={p.id} value={i}>
-                      {p.name}
-                    </option>
-                  ) : null,
-                )}
-              </optgroup>
-            ))}
-            <option value={CUSTOM}>Custom</option>
-          </select>
-        </label>
-        <label>
+      <label className="preset">
+        Preset
+        <select value={preset} onChange={e => onPreset(Number(e.target.value))}>
+          {groups.map(g => (
+            <optgroup key={g} label={presetGroupNames[g]}>
+              {presets.map((p, i) =>
+                p.group === g ? (
+                  <option key={p.id} value={i}>
+                    {p.name}
+                  </option>
+                ) : null,
+              )}
+            </optgroup>
+          ))}
+          <option value={CUSTOM}>Custom</option>
+        </select>
+      </label>
+      <fieldset className="patgroup">
+        <legend className="vh">Disk and moves</legend>
+        <label className="slots">
           Slots
           {/* uncontrolled while typing; the clamped value is committed on change (blur or enter) */}
           <input
@@ -49,40 +53,39 @@ export function PatternEditor({ preset, onPreset, slots, onSlots, draft, onDraft
             min={3}
             max={64}
             defaultValue={slots}
-            style={{ width: 84 }}
             onBlur={e => onSlots(Number(e.target.value))}
             onKeyDown={e => e.key === 'Enter' && onSlots(Number(e.currentTarget.value))}
           />
         </label>
-      </div>
-      <label htmlFor="pat" style={{ display: 'block' }}>
-        Moves <span style={{ fontWeight: 400, color: 'var(--mut)' }}>(repeat forever)</span>
-      </label>
-      <div className="patrow">
-        <textarea
-          id="pat"
-          rows={2}
-          spellCheck={false}
-          value={draft}
-          onChange={e => onDraft(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) onApply();
-          }}
-        />
-        <button className="pri" onClick={onApply}>
-          Apply
-        </button>
-      </div>
-      <span className="err" role="alert">
-        {error}
-      </span>
-      <div className="toks">
-        {pattern.map((t, i) => (
-          <span key={i} className={i === activeToken ? 'on' : undefined}>
-            {t.text}
+        <div className="moves">
+          <span className="moves-head">
+            <label htmlFor="pat">Moves</label>
+            <HelpButton label="How to write moves" onClick={() => help.current?.showModal()} />
           </span>
-        ))}
-      </div>
+          <textarea
+            id="pat"
+            rows={3}
+            spellCheck={false}
+            value={draft}
+            onChange={e => onDraft(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) onApply();
+            }}
+          />
+        </div>
+        <div className="patbtns">
+          <button className="pri" onClick={onApply}>
+            Apply
+          </button>
+          <button title="Take every thread off the disk and clear the moves" onClick={onReset}>
+            Reset
+          </button>
+        </div>
+        <span className="err" role="alert">
+          {error}
+        </span>
+      </fieldset>
+      <NotationHelp ref={help} />
     </>
   );
 }

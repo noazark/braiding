@@ -103,7 +103,16 @@ export function useDiskSetup() {
     });
   }, []);
 
-  const clear = useCallback(() => edit({ threads: [], colorOnly: false }), [edit]);
+  /** Start over: no threads on the disk and no moves (the slots stay). */
+  const reset = useCallback(
+    () =>
+      setLoaded(l => ({
+        setup: { ...l.setup, threads: [], pattern: '' },
+        draft: '',
+        preset: CUSTOM,
+      })),
+    [],
+  );
 
   return {
     setup,
@@ -115,6 +124,6 @@ export function useDiskSetup() {
     setSlots,
     edit,
     shuffle,
-    clear,
+    reset,
   };
 }

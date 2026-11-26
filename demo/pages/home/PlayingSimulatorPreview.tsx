@@ -1,11 +1,10 @@
 import { useMemo, useRef } from 'react';
-import { mod } from 'kumihimo';
 import { SimulatorPreview } from '../../components/SimulatorPreview';
 import { useIsVisible } from '../../hooks/useIsVisible';
 import { usePrefersReducedMotion } from '../../hooks/useMediaQuery';
 import { useStepper } from '../../hooks/useStepper';
 import { runOf, type DiskSetup } from '../../lib/diskSetup';
-import { PatternSteps } from './PatternSteps';
+import { PatternSteps, stepsPlayed } from '../../components/PatternSteps';
 
 const TURN_MS = 900;
 const MOVE_MS = 850;
@@ -21,7 +20,6 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
  */
 export function PlayingSimulatorPreview({ setup }: { setup: DiskSetup }) {
   const { timeline, pattern } = runOf(setup);
-  const played = useMemo(() => [0], [setup]);
   const N = setup.slots;
   const colors = useMemo(() => setup.threads.map(t => t.color), [setup]);
 
@@ -40,17 +38,7 @@ export function PlayingSimulatorPreview({ setup }: { setup: DiskSetup }) {
   const spin = -lerp(prev.turn, cur.turn, turnT) * (360 / N);
 
   // how far through the endless run of steps: the turn while the disk turns, then the move
-  const playedBy = (n: number) => {
-    // steps played up to and including step n's move (step 0 is the loaded disk)
-    while (played.length <= n) {
-      const k = played.length;
-      const tok = timeline.at(k)?.move?.token ?? 0;
-      const before = k > 1 ? timeline.at(k - 1)!.move!.token : -1;
-      played.push(played[k - 1]! + (mod(tok - before, pattern.length) || pattern.length));
-    }
-    return played[n]! - 1;
-  };
-  const position = still || !cur.move ? 0 : playedBy(step) - (turnMs && t < turnMs ? 1 : 0);
+  const position = still || !cur.move ? 0 : stepsPlayed(timeline, pattern.length, step) - (turnMs && t < turnMs ? 1 : 0);
 
   return (
     <div className="playing-preview" ref={box} aria-hidden="true">

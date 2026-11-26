@@ -11,14 +11,14 @@ export interface CheckDrawerProps {
 
 /** The pattern check: a tab on the chart's bottom edge that slides a drawer of findings up over it. */
 export function CheckDrawer({ check, open, onToggle, onJump }: CheckDrawerProps) {
-  const { lines, issues, broken } = check;
-  const tone = broken ? 'err' : issues ? 'warn' : 'ok';
+  const { lines, issues, broken, empty } = check;
+  const tone = empty ? 'empty' : broken ? 'err' : issues ? 'warn' : 'ok';
   const s = issues > 1 ? 's' : '';
   return (
     <>
       <div className={'drawer' + (issues ? ' bad' : '')} id="checkBox" aria-hidden={!open} inert={!open}>
         <div className="drawer-b">
-          <h3>{issues ? `Pattern check: ${issues} issue${s}` : 'Pattern check: looks good'}</h3>
+          <h3>{empty ? 'Pattern check: nothing to check yet' : issues ? `Pattern check: ${issues} issue${s}` : 'Pattern check: looks good'}</h3>
           <ul className="checklist">
             {lines.map((l, i) => (
               <li key={i} className={l.tone}>
@@ -40,7 +40,7 @@ export function CheckDrawer({ check, open, onToggle, onJump }: CheckDrawerProps)
         </div>
       </div>
       <button className={'tab ' + tone} type="button" aria-expanded={open} aria-controls="checkBox" onClick={onToggle}>
-        <span>{broken ? '✕ Pattern broken' : issues ? `${issues} issue${s}` : '✓ Pattern OK'}</span>
+        <span>{empty ? 'Empty' : broken ? '✕ Pattern broken' : issues ? `${issues} issue${s}` : '✓ Pattern OK'}</span>
         <span className="chev" aria-hidden="true" />
       </button>
     </>
