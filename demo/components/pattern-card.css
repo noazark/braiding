@@ -48,6 +48,7 @@
 }
 .tag {
   display: inline-block;
+  margin-bottom: 3px;
   font-size: 11.5px;
   font-weight: 700;
   border: 2px solid #000;
@@ -67,6 +68,11 @@
 }
 .tag.shape {
   background: #fff;
+}
+/* weave and drift: plain pills after the shape */
+.tag.trait {
+  background: #fff;
+  font-weight: 600;
 }
 .tag.liked {
   background: #ff4a3d;

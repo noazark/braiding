@@ -21,9 +21,12 @@ export interface PatternCardProps {
   readonly children?: React.ReactNode;
 }
 
-/** A pattern card: the braid's strand chart, tags, its name and a line of facts. */
+/** A trait as a tag reads: "broken twill" → "Broken twill". */
+const cap = (s: string) => s[0]!.toUpperCase() + s.slice(1);
+
+/** A pattern card: the braid's strand chart, tags (preset or new, shape, weave, drift), its name and a line of facts. */
 export const PatternCard = memo(function PatternCard({ card, onOpen, className, style, eager, isNew, liked, children }: PatternCardProps) {
-  const { profile: p, known, family, simplifiedFrom } = card;
+  const { profile: p, known, family } = card;
   const interactive = onOpen
     ? {
         tabIndex: 0,
@@ -44,12 +47,18 @@ export const PatternCard = memo(function PatternCard({ card, onOpen, className, 
         <div>
           {known ? <span className="tag known">Preset</span> : isNew ? <span className="tag new">New</span> : null}
           <span className="tag shape">{isRound(card) ? 'Round' : 'Flat'}</span>
+          <span className="tag trait" title="Weave">
+            {cap(p.traits.weave)}
+          </span>
+          <span className="tag trait" title="Drift">
+            {cap(p.traits.drift)}
+          </span>
           {liked && (
             <span className="tag liked" title="Liked" aria-label="Liked">
               <Heart />
             </span>
           )}
-          {simplifiedFrom ? <span className="tag simp">Simplified</span> : waste(card) ? <span className="tag simp">Needless moves</span> : null}
+          {waste(card) ? <span className="tag simp">Needless moves</span> : null}
         </div>
         <div className="t">{known || p.name}</div>
         <div className="s">
