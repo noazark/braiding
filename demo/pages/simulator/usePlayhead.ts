@@ -8,9 +8,16 @@ import { usePrefersReducedMotion } from '../../hooks/useMediaQuery';
  * Which step is showing, and playback. Going back to the start whenever the braid changes (a new
  * timeline), since the old step number means nothing for a new pattern.
  */
+/** A step's length while playing at normal speed. */
+const STEP_MS = 1000;
+
+/** Playback speeds: how many times faster than normal steps go by. */
+export type Speed = 1 | 3;
+
 export function usePlayhead(timeline: Timeline) {
   const [cur, setCur] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState<Speed>(1);
   const [shown, setShown] = useState(timeline);
   if (shown !== timeline) {
     // adjust during render, so a stale step never reaches the new timeline
@@ -44,13 +51,15 @@ export function usePlayhead(timeline: Timeline) {
   }, [go]);
 
   const reducedMotion = usePrefersReducedMotion();
+  /** How long each step lasts while playing: long enough at normal speed to watch each move go around. */
+  const stepMs = STEP_MS / speed;
   useInterval(
     () => {
       const { step, timeline: tl } = latest.current;
       go(step + 1);
       if (tl.finished && Math.min(step + 1, tl.last) >= tl.last) stop();
     },
-    playing ? (reducedMotion ? 500 : 220) : null,
+    playing ? stepMs : null,
   );
 
   // arrow keys step, unless typing
@@ -65,5 +74,5 @@ export function usePlayhead(timeline: Timeline) {
     return () => document.removeEventListener('keydown', onKey);
   }, [go, stop, latest]);
 
-  return { step, playing, go, stop, toggle, toStart };
+  return { step, playing, speed, setSpeed, stepMs, reducedMotion, go, stop, toggle, toStart };
 }

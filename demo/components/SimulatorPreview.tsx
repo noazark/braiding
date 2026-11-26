@@ -1,5 +1,5 @@
 import type { ReactNode, Ref } from 'react';
-import { slotPoint } from '../lib/diskGeometry';
+import { angle, slotPoint } from '../lib/diskGeometry';
 import { BEAD_RADIUS, DiskFace, DiskShadow, Strand } from './DiskParts';
 
 /** A move being shown: its thread (and a swap's partner) drawn bold on top, traveling between slots. */
@@ -40,6 +40,28 @@ export interface SimulatorPreviewProps {
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const smooth = (x: number) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
+
+/** How far out a moving thread is lifted while it travels around: just past the beads, inside the frame. */
+const LIFT = 195;
+/** How far in a swap's partner travels around, so the two pass each other instead of colliding. */
+const DIP = 164;
+/** The share of a move spent lifting out (and again dropping in); the rest goes around. */
+const EDGE = 0.25;
+
+/**
+ * Where a moving thread is, `t` (0–1) of the way from slot `from` to slot `to`: out (or, for a swap's
+ * partner, in) from its slot, around the disk the short way to the new slot's angle, then into place
+ * at radius `endR`.
+ */
+function travel(from: number, to: number, endR: number, t: number, slots: number, ring: number): [number, number] {
+  const a0 = angle(from, slots);
+  // the short way around, either direction
+  const d = ((((angle(to, slots) - a0) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;
+  const r = t < EDGE ? lerp(BEAD_RADIUS, ring, smooth(t / EDGE)) : t > 1 - EDGE ? lerp(ring, endR, smooth((t - 1 + EDGE) / EDGE)) : ring;
+  const a = a0 + d * smooth((t - EDGE) / (1 - 2 * EDGE));
+  return [200 + r * Math.cos(a), 200 + r * Math.sin(a)];
+}
 
 /**
  * The braiding disk, as both the simulator and the home page show it: shadow, face (rim, ring, hub,
@@ -72,12 +94,12 @@ export function SimulatorPreview({
   const threads = order.map(i => {
     const slot = positions[i]!;
     const k = (depth[slot] = (depth[slot] || 0) + 1);
-    let [x, y] = slotPoint(slot, BEAD_RADIUS - (k - 1) * 9, slots);
-    // a moving thread travels in a straight line from where it was lifted to where it lands
+    const r = BEAD_RADIUS - (k - 1) * 9;
+    let [x, y] = slotPoint(slot, r, slots);
+    // a moving thread lifts out of its slot, goes around the disk and drops into its new one (a
+    // swap's partner goes around on the inside, the other way)
     if (move && moving.includes(i) && progress < 1) {
-      const start = i === move.thread ? move.from : move.to;
-      const [sx, sy] = slotPoint(start, BEAD_RADIUS, slots);
-      [x, y] = [lerp(sx, x, progress), lerp(sy, y, progress)];
+      [x, y] = i === move.thread ? travel(move.from, slot, r, progress, slots, LIFT) : travel(move.to, slot, r, progress, slots, DIP);
     }
     return (
       <g key={i} style={i === hidden ? { opacity: 0 } : undefined}>

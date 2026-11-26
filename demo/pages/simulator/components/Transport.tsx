@@ -1,10 +1,11 @@
 import type { Step } from 'kumihimo';
+import type { Speed } from '../usePlayhead';
 
 export interface TransportProps {
   readonly step: Step;
-  /** The furthest step the slider reaches. */
-  readonly max: number;
   readonly playing: boolean;
+  readonly speed: Speed;
+  readonly onSpeed: (s: Speed) => void;
   readonly threads: number;
   readonly slots: number;
   /** Why the pattern stopped, shown when the playhead reaches that point. */
@@ -20,13 +21,16 @@ const icon = (children: React.ReactNode) => (
   </svg>
 );
 
-/** Play, pause, step and scrub, with a line saying what the current step did. */
-export function Transport({ step, max, playing, threads, slots, error, atEnd, onGo, onToggle }: TransportProps) {
+/** The faster speed on offer; turning it off goes back to normal speed. */
+const FAST = 3;
+
+/** Play, pause, step, and play faster, with a line saying what the current step did. */
+export function Transport({ step, playing, speed, onSpeed, threads, slots, error, atEnd, onGo, onToggle }: TransportProps) {
   const mv = step.move;
   const n = step.index;
   return (
     <>
-      <div className="ctl">
+      <div className="ctl transport">
         <button className="icon" title="Back to start" aria-label="Back to start" onClick={() => onGo(0)}>
           {icon(
             <>
@@ -61,7 +65,9 @@ export function Transport({ step, max, playing, threads, slots, error, atEnd, on
             </>,
           )}
         </button>
-        <input type="range" min={0} max={max} value={n} aria-label="Step" onChange={e => onGo(Number(e.target.value))} />
+        <button className="icon speed" title={`Play at ${FAST}× speed`} aria-pressed={speed === FAST} onClick={() => onSpeed(speed === FAST ? 1 : FAST)}>
+          {FAST}×
+        </button>
       </div>
       <div className="status" aria-live="polite">
         {error && atEnd ? (

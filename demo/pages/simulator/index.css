@@ -91,11 +91,16 @@
   border-radius: 10px;
 }
 :root[data-skin="neobrutal"] .play {
-  background: var(--acc);
-  color: #fff;
+  background: #fff;
+  color: #000;
   border-radius: 12px;
   width: 52px;
   height: 52px;
+}
+/* playing: green, like the "Pattern OK" badge, hover or not */
+:root[data-skin="neobrutal"] .play.on,
+:root[data-skin="neobrutal"] .play.on:hover {
+  background: #3ccf6e;
 }
 :root[data-skin="neobrutal"] .tb2 {
   display: flex;
@@ -300,6 +305,22 @@ canvas {
   align-items: center;
   margin-top: 12px;
 }
+/* the play controls: centered under the disk */
+.ctl.transport {
+  justify-content: center;
+}
+/* the faster speed, set a little apart after the play controls: filled in while it's on */
+.ctl .speed {
+  margin-left: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 0 10px;
+}
+.ctl .speed[aria-pressed="true"],
+:root[data-skin="neobrutal"] .ctl .speed[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bg);
+}
 /* controls: no boxes; soft tinted shapes, underlined fields */
 button,
 select,
@@ -470,6 +491,10 @@ textarea:focus {
 }
 .status b {
   color: var(--acc);
+}
+/* what the step did, centered under the play controls */
+.ctl.transport + .status {
+  text-align: center;
 }
 .err {
   color: var(--acc);

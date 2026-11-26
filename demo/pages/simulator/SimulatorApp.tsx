@@ -15,6 +15,7 @@ import { Transport } from './components/Transport';
 import type { Brush } from './model';
 import { useDiskDrag } from './useDiskDrag';
 import { useDiskSetup } from './useDiskSetup';
+import { useMoveTween } from './useMoveTween';
 import { usePlayhead } from './usePlayhead';
 
 /**
@@ -66,8 +67,10 @@ export function SimulatorApp() {
   const panels = useFoldingPanels();
 
   const step = timeline.steps[playhead.step]!;
+  // each step forward plays its move: within the step's time while playing (a little under, so it lands
+  // before the next one starts), at an easy pace when stepping by hand
+  const moveT = useMoveTween(playhead.step, playhead.playing ? playhead.stepMs * 0.9 : 360, playhead.reducedMotion);
   const error = run.error ? '' : haltText(timeline.halt);
-  const sliderMax = timeline.finished ? timeline.last : Math.max(200, Math.ceil((playhead.step + 1) / 200) * 200 + 200);
   // anything that changes the disk starts again from the loaded disk
   const thenRewind =
     <A extends unknown[]>(f: (...a: A) => unknown) =>
@@ -97,6 +100,7 @@ export function SimulatorApp() {
                 colors={colors}
                 positions={step.positions}
                 move={step.move}
+                progress={moveT}
                 markFrom
                 hidden={drag?.moved && drag.src.kind === 'thread' ? drag.src.ix : undefined}
                 overlay={<DragGhost drag={drag} slots={slots} brush={brush} />}
@@ -104,8 +108,9 @@ export function SimulatorApp() {
               />
               <Transport
                 step={step}
-                max={sliderMax}
                 playing={playhead.playing}
+                speed={playhead.speed}
+                onSpeed={playhead.setSpeed}
                 threads={threads.length}
                 slots={slots}
                 error={error}
