@@ -8,7 +8,6 @@ import { colorsOf, type Card } from '../lib/patternCards';
 
 const STYLE = {
   bg: '#ffffff',
-  accent: '#000',
   tw: 5,
   outline: '#000',
   ow: 2.5,

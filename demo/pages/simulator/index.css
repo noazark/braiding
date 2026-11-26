@@ -299,6 +299,13 @@ body {
   border-radius: var(--r);
   background: var(--foam);
 }
+/* a box the chart fills exactly: it follows the playhead itself, so there's nothing to scroll */
+.scrollbox.fit {
+  overflow: hidden;
+}
+.scrollbox.fit > canvas {
+  display: block;
+}
 canvas {
   display: block;
 }
@@ -868,7 +875,8 @@ td:first-child {
 }
 /* ===== Layout tiers. Sizes are fixed within a tier; extra space becomes margin, nothing stretches. =====
    phone      < 700         stacked, page scrolls
-   tablet     700–1279      disk panel (one column) | chart          iPads, small laptops
+   tablet     700–999       disk panel (one column) | chart, page scrolls      iPads
+   laptop     1000–1279     [disk + toolbar | pattern + play controls] | chart, smaller disk
    desktop    1280–1679     [disk + toolbar | pattern + play controls] | chart
    wide       ≥ 1680        same, largest disk; layout capped and centered
    Short screens (< 820 tall) drop one disk size so the play controls stay in view. */
@@ -909,7 +917,8 @@ td:first-child {
     --disk: 600px;
   }
 }
-@media (min-width: 700px) {
+/* side by side (from 1000px): the page is pinned to the window, and the panels fit inside it */
+@media (min-width: 1000px) {
   html,
   body {
     height: 100%;
@@ -926,25 +935,26 @@ td:first-child {
   .top {
     flex: none;
   }
+  .stage {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .stage > .card {
+    min-height: 0;
+  }
+}
+@media (min-width: 700px) {
   .sub {
     font-size: 14px;
     max-width: 60ch;
   }
   .stage {
-    flex: 1 1 0;
-    min-height: 0;
     grid-template-columns: minmax(0, 1fr) var(--chart);
     gap: 20px;
-  }
-  .stage > .card {
-    min-height: 0;
   }
   .stage > .card:first-child {
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
   }
   .dkgrid {
     flex: 1 0 auto;
@@ -996,7 +1006,7 @@ td:first-child {
   }
 }
 /* split tiers: disk column fixed and centered, controls beside it scroll on their own */
-@media (min-width: 1280px) {
+@media (min-width: 1000px) {
   .stage > .card:first-child {
     overflow: hidden;
   }
@@ -1071,7 +1081,7 @@ td:first-child {
   left: -6px;
 }
 /* side by side, the disk sits centered with room above it: the steps can ride up off its corner */
-@media (min-width: 1280px) {
+@media (min-width: 1000px) {
   .diskwrap .pattern-steps {
     top: -34px;
     left: -14px;
@@ -1218,15 +1228,24 @@ dialog.helpdlg form {
 .ctrlcol .ctl.transport {
   margin-top: 18px;
 }
+/* the laptop tier's narrower controls column: the play controls close up a little to stay on one row */
+@media (min-width: 1000px) and (max-width: 1279px) {
+  .ctrlcol .ctl.transport {
+    gap: 6px;
+  }
+  .ctrlcol .ctl .speed {
+    margin-left: 4px;
+  }
+}
 
 /* the help dialogs' text */
 dialog.helpdlg p {
   margin: 0 0 10px;
 }
 
-/* Below the split tiers (under 1280px) the disk card is one column: the disk, its toolbar, the play controls, then
+/* Below the split tiers (under 1000px) the disk card is one column: the disk, its toolbar, the play controls, then
    the pattern. The two columns' contents flow into it (display: contents) so they can be ordered. */
-@media (max-width: 1279px) {
+@media (max-width: 999px) {
   .diskcol,
   .ctrlcol {
     display: contents;
@@ -1262,10 +1281,10 @@ dialog.helpdlg p {
 
 /* side by side: the pattern group takes the column's spare height, and the moves box grows into it,
    so the play controls sit at the bottom of the panel instead of leaving a gap under the form */
-@media (min-width: 1280px) {
+@media (min-width: 1000px) {
+  /* it gives up its spare height but never shrinks under its contents, so it can't run into the play controls */
   .patgroup {
     flex: 1 1 auto;
-    min-height: 0;
     display: flex;
     flex-direction: column;
   }
@@ -1276,7 +1295,7 @@ dialog.helpdlg p {
   }
   .patgroup .moves textarea {
     flex: 1 1 auto;
-    min-height: 5.5em;
+    min-height: 3.2em;
     resize: none;
   }
 }

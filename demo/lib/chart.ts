@@ -12,7 +12,6 @@ import { mod, type Step, type Timeline } from 'kumihimo';
 
 export interface ChartStyle {
   readonly bg: string;
-  readonly accent: string;
   /** Thread width, px. */
   readonly tw: number;
   /** Outline color, or none. */
@@ -34,7 +33,7 @@ export interface ChartOptions {
    * crossing becomes one S-curve that leaves and arrives vertically, fuller as it rises.
    */
   readonly corner: number;
-  /** Mark this step and draw around it. */
+  /** Draw around this step (with `follow`, keep it in view). */
   readonly playhead?: number;
   readonly style: ChartStyle;
   /**
@@ -42,11 +41,16 @@ export interface ChartOptions {
    * the chart is cut off there, so a small box doesn't hold a canvas full of rows no one sees.
    */
   readonly size: { readonly w: number; readonly h: number; readonly max?: number };
+  /**
+   * Draw exactly `size.h` tall and keep the playhead in view, centered where there's chart enough above
+   * and below it, instead of drawing the chart's whole height for a box to scroll.
+   */
+  readonly follow?: boolean;
 }
 
 export interface ChartResult {
   readonly height: number;
-  /** Where the playhead line is, if it was drawn. */
+  /** How far down the canvas the playhead's step is, if the chart reaches it. */
   readonly playheadY: number | null;
   /** The last step drawn. */
   readonly steps: number;
@@ -113,6 +117,13 @@ export function renderChart(canvas: HTMLCanvasElement, cfg: ChartOptions): Chart
   const cur = cfg.playhead ?? 0;
   // start from the first move, or (far into a run) from an earlier checkpoint in blocks of 100 so rows don't re-pack each step
   const b0 = Math.max(0, Math.floor((cur - 200) / 100) * 100);
+  /** Where the playhead's line goes in a layout, if the layout reaches it. */
+  const playheadIn = (L: ReturnType<typeof layout>): number | null => {
+    if (cfg.playhead == null) return null;
+    if (cur === b0) return L.Yr[0]!;
+    const r = L.rows.findIndex(([s0, s1]) => cur > s0 && cur <= s1);
+    return r < 0 ? null : L.Yr[r + 1]!;
+  };
   let M = b0 + 24;
   let L: ReturnType<typeof layout>;
   let last: number;
@@ -120,22 +131,31 @@ export function renderChart(canvas: HTMLCanvasElement, cfg: ChartOptions): Chart
     tl.extend(M);
     last = Math.min(M, tl.last);
     L = layout(tl.steps, T, cw, cfg.height, b0, last);
-    if ((L.Yr.at(-1)! + L.top >= BH && last >= cur + 40) || tl.finished || M >= b0 + 2400) break;
+    // following the playhead, there must be half a box of chart below it too
+    const at = playheadIn(L);
+    const need = cfg.follow && cfg.playhead != null ? (at == null ? Infinity : Math.max(BH, at + BH / 2)) : BH;
+    if ((L.Yr.at(-1)! + L.top >= need && last >= cur + 40) || tl.finished || M >= b0 + 2400) break;
     M += 24;
   }
   const H = tl.steps;
   const { lw, RW, pad, rows, Yr, delta } = L;
-  const height = Math.min(Yr.at(-1)! + L.top, cfg.size.max ?? Infinity);
+  const content = Yr.at(-1)! + L.top;
+  // how tall the chart is drawn, and how much of it the canvas shows
+  const height = cfg.follow ? Math.max(content, BH) : Math.min(content, cfg.size.max ?? Infinity);
+  const view = cfg.follow ? BH : height;
+  const ym = playheadIn(L);
 
   // canvas at device resolution
   const dpr = devicePixelRatio || 1;
   const q = (v: number) => Math.round(v * dpr) / dpr;
+  // following, the drawing slides up to put the playhead mid-box, as far as the chart allows
+  const oy = cfg.follow && ym != null ? q(Math.max(0, Math.min(ym - BH / 2, height - BH))) : 0;
   canvas.width = Math.round(W * dpr);
-  canvas.height = Math.round(height * dpr);
+  canvas.height = Math.round(view * dpr);
   canvas.style.width = W + 'px';
-  canvas.style.height = height + 'px';
+  canvas.style.height = view + 'px';
   const c = canvas.getContext('2d')!;
-  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.setTransform(dpr, 0, 0, dpr, 0, -oy * dpr);
   const CB = st.bg;
   const colors = cfg.colors;
   // crisp at any screen scale: whole-device-pixel widths; thread and outline thickness shrink with the column spacing
@@ -315,24 +335,5 @@ export function renderChart(canvas: HTMLCanvasElement, cfg: ChartOptions): Chart
   pass();
   c.restore();
 
-  // the playhead
-  let ym: number | null = null;
-  if (cfg.playhead != null) {
-    if (cur === b0) ym = Yr[0]!;
-    else if (cur <= last)
-      rows.forEach(([s0, s1], r) => {
-        if (cur > s0 && cur <= s1) ym = Yr[r + 1]!;
-      });
-  }
-  if (ym != null) {
-    c.strokeStyle = st.accent;
-    c.lineWidth = 2;
-    c.setLineDash([6, 5]);
-    c.beginPath();
-    c.moveTo(0, ym);
-    c.lineTo(W, ym);
-    c.stroke();
-    c.setLineDash([]);
-  }
-  return { height, playheadY: ym, steps: last };
+  return { height: view, playheadY: ym == null ? null : ym - oy, steps: last };
 }

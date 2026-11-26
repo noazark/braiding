@@ -22,14 +22,13 @@ const COLUMN_WIDTH = 12;
 const STEEPNESS = 0;
 const CORNER = 1.5;
 
-/** The strand chart, kept scrolled to the playhead, with the pattern check over its bottom edge. */
+/** The strand chart, exactly as tall as its box and following the playhead, with the pattern check over its bottom edge. */
 export function ChartPanel({ timeline, colors, playhead, check, onJump }: ChartPanelProps) {
   const box = useRef<HTMLDivElement>(null);
   const { width, height } = useElementSize(box);
   const style = useMemo(
     () => ({
       bg: cssVar('--chartbg', '#fff'),
-      accent: cssVar('--acc', '#000'),
       tw: 5,
       outline: '#000',
       ow: 2.5,
@@ -40,7 +39,7 @@ export function ChartPanel({ timeline, colors, playhead, check, onJump }: ChartP
   return (
     <div className="card chartcard">
       <div className={'chartwrap' + (checkOpen ? ' open' : '')}>
-        <div className="scrollbox" ref={box}>
+        <div className="scrollbox fit" ref={box}>
           <StrandChart
             timeline={timeline}
             colors={colors}
@@ -51,9 +50,7 @@ export function ChartPanel({ timeline, colors, playhead, check, onJump }: ChartP
             style={style}
             width={width}
             minHeight={height || 400}
-            onRender={r => {
-              if (r.playheadY != null && box.current) box.current.scrollTop = r.playheadY - box.current.clientHeight / 2;
-            }}
+            follow
           />
         </div>
         <CheckDrawer check={check} open={checkOpen} onToggle={() => setCheckOpen(o => !o)} onJump={onJump} />
