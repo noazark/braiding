@@ -2,7 +2,11 @@ import type { ReactNode } from 'react';
 import './page-header.css';
 import { SiteNav, type Page } from './SiteNav';
 
+/** The site's name: where a page's title starts, and the link home. */
+const SITE = 'Braiding';
+
 export interface PageHeaderProps {
+  /** The page's name. Its leading site name ("Braiding …") links back home. */
   readonly title: string;
   /** Which page this is, so the nav links to the others. */
   readonly current: Page;
@@ -26,7 +30,18 @@ export function PageHeader({ title, current, children, actions, floating, stuck,
   return (
     <header className={'top pagehead' + (floating ? ' floating' : '') + (stuck || compact ? ' stuck' : '') + (compact ? ' compact' : '')}>
       <div className="pagehead-row">
-        <h1>{title}</h1>
+        <h1>
+          {title.startsWith(SITE) ? (
+            <>
+              <a className="pagehead-home" href="../">
+                {SITE}
+              </a>
+              {title.slice(SITE.length)}
+            </>
+          ) : (
+            title
+          )}
+        </h1>
         {actions}
         <SiteNav current={current} />
       </div>
