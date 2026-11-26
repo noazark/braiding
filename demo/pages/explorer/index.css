@@ -268,7 +268,9 @@ button:disabled {
   scroll-snap-stop: always;
   display: grid;
   place-items: center;
-  padding: 56px 12px 30px;
+  /* room above for Close and below for the swipe hint (and the card's shadow), so the card never
+     crowds them: it sizes itself to what's left */
+  padding: 76px 16px 58px;
   container-type: size;
 }
 .overlay .hint {
@@ -276,7 +278,7 @@ button:disabled {
   z-index: 0;
   left: 0;
   right: 0;
-  bottom: 8px;
+  bottom: max(18px, env(safe-area-inset-bottom));
   text-align: center;
   font-size: 13px;
   font-weight: 700;
