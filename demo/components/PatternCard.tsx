@@ -21,7 +21,7 @@ export interface PatternCardProps {
   readonly children?: React.ReactNode;
 }
 
-/** A trait as a tag reads: "broken twill" → "Broken twill". */
+/** A trait as a tag reads: "long float" → "Long float". */
 const cap = (s: string) => s[0]!.toUpperCase() + s.slice(1);
 
 /** A pattern card: the braid's strand chart, tags (preset or new, shape, weave, drift), its name and a line of facts. */

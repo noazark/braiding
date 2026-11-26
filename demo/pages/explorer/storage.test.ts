@@ -27,6 +27,14 @@ describe('saving finds', () => {
     expect(keyOf(back[0]!)).toBe(keyOf(all[1]!));
   });
 
+  it('renames weaves saved under their old names, braid name included', () => {
+    const [card] = sample();
+    const old = { ...card!, profile: { ...card!.profile, traits: { ...card!.profile.traits, weave: 'twill' }, name: '8-strand twill wave cord' } };
+    const [back] = parseFinds(JSON.stringify([old]));
+    expect(back!.profile.traits.weave).toBe('regular');
+    expect(back!.profile.name).toMatch(/^\d+-strand regular /);
+  });
+
   it('ignores anything that is not a list of finds', () => {
     expect(parseFinds(null)).toEqual([]);
     expect(parseFinds('not json')).toEqual([]);

@@ -50,7 +50,7 @@ checkPattern(setup);
 import { profileBraid } from 'kumihimo';
 
 const r = profileBraid(setup);
-if (r.ok) r.profile.name; // "8-strand twill wave cord"
+if (r.ok) r.profile.name; // "8-strand regular wave cord"
 ```
 
 **5. Step through it**, for example to draw the disk:

@@ -183,7 +183,7 @@ describe('profiles', () => {
     const p = presets.find(p => p.id === 'maru-yotsu-round-4-threads')!;
     const r = profileBraid(setup(p.slots, p.threads, p.pattern));
     expect(r.ok && { name: r.profile.name, shape: r.profile.shape, length: r.profile.repeat.length }).toEqual({
-      name: '4-strand plain lattice cord',
+      name: '4-strand diamond lattice cord',
       shape: 'round',
       length: 8,
     });

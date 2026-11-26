@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { WEAVES, type Weave } from 'kumihimo';
 import { PageHeader } from '../../components/PageHeader';
 import { PatternCard, type PatternCardProps } from '../../components/PatternCard';
 import { useScrolledPast } from '../../hooks/useScrolledPast';
@@ -62,7 +63,8 @@ export function ExplorerApp() {
           const v = traitOf(e, k);
           n.set(v, (n.get(v) ?? 0) + (others(e) ? 1 : 0));
         }
-        return [k, [...n].sort(([a], [b]) => (typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b))))];
+        // weaves from tightest to loosest, thread counts in order, drifts by name
+        return [k, [...n].sort(([a], [b]) => (k === 'weave' ? WEAVES.indexOf(a as Weave) - WEAVES.indexOf(b as Weave) : typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b))))];
       }),
     ) as Record<TraitKey, [string | number, number][]>;
     const shown = rows.filter(([, e]) => inFilters(filters, viewLikes)(e));

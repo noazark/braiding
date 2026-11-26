@@ -72,6 +72,7 @@ export {
   shortestSignature,
   describeTraits,
   braidName,
+  WEAVES,
   type BraidProfile,
   type ProfileResult,
   type ProfileOptions,

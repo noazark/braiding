@@ -9,9 +9,11 @@
  * - **Round or flat.** If the crossings pass every gap between neighboring strands, the braid wraps
  *   all the way round (a round cord). If some gap is never crossed, it can be cut open there and
  *   laid flat (a band).
- * - **Traits.** How the strands weave (alternating one over one under = plain, two-and-two = twill,
- *   longer = floats) and how they travel around the cord (spiral, lattice, twist or wave). Together
- *   these give a descriptive name such as "8-strand twill spiral cord".
+ * - **Traits.** How the strands weave, named as braiders name them by the longest run a thread
+ *   stays over (or under) before switching: one over one under = diamond, two-and-two = regular, a
+ *   mix of ones and twos = mixed, threes = Hercules, longer = long float. And how they travel around
+ *   the cord (spiral, lattice, twist or wave). Together these give a descriptive name such as
+ *   "8-strand regular spiral cord".
  * - **Signature.** A string that is the same for two patterns that make the same braid up to
  *   starting point, disk rotation, mirror image, or the order of crossings that don't touch.
  *   It never matches two different braids, but it can miss that two words are equal when proving
@@ -28,8 +30,15 @@ import { findRepeat, type Repeat } from './repeat.js';
 import { mod } from './ring.js';
 import { type Crossing, type Word, normalForm, reduceWord, repeatWord, simplifyWord, wordRoot, wordToNotation } from './word.js';
 
-/** How strands alternate over and under. */
-export type Weave = 'plain' | 'twill' | 'broken twill' | 'floating' | 'long-float';
+/**
+ * How strands alternate over and under, by the longest run a thread stays over (or under) the
+ * threads it crosses: diamond 1/1, regular 2/2, mixed (ones and twos), Hercules (threes), long
+ * float (four or more).
+ */
+export type Weave = 'diamond' | 'regular' | 'mixed' | 'Hercules' | 'long float';
+
+/** The weaves from tightest (shortest runs) to loosest. */
+export const WEAVES: readonly Weave[] = ['diamond', 'mixed', 'regular', 'Hercules', 'long float'];
 
 /**
  * How strands travel around the cord over one repeat, from each strand's net column travel:
@@ -69,7 +78,7 @@ export interface BraidProfile {
   /** True if some kept crossing happens across the chart's wrap-around seam (last column ↔ first). */
   readonly crossesSeam: boolean;
   readonly traits: Traits;
-  /** A descriptive name from the traits, e.g. "8-strand twill spiral cord". */
+  /** A descriptive name from the traits, e.g. "8-strand regular spiral cord". */
   readonly name: string;
   /** Equal for patterns that make the same braid (see module notes). */
   readonly signature: string;
@@ -249,7 +258,7 @@ export function describeTraits(seq: readonly (readonly number[])[], travel: read
   }
   const longest = Math.max(...runs);
   const weave: Weave =
-    longest === 1 ? 'plain' : runs.every(r => r === 2) ? 'twill' : longest === 2 ? 'broken twill' : longest === 3 ? 'floating' : 'long-float';
+    longest === 1 ? 'diamond' : runs.every(r => r === 2) ? 'regular' : longest === 2 ? 'mixed' : longest === 3 ? 'Hercules' : 'long float';
   const pos = travel.some(d => d > 0);
   const neg = travel.some(d => d < 0);
   const zero = travel.some(d => d === 0);
@@ -257,5 +266,6 @@ export function describeTraits(seq: readonly (readonly number[])[], travel: read
   return { strands: seq.length, weave, drift, shape: round ? 'round' : 'flat' };
 }
 
-/** "8-strand twill spiral cord", "6-strand plain lattice band". */
-export const braidName = (t: Traits): string => `${t.strands}-strand ${t.weave} ${t.drift} ${t.shape === 'round' ? 'cord' : 'band'}`;
+/** "8-strand regular spiral cord", "6-strand diamond lattice band", "12-strand long-float wave cord". */
+export const braidName = (t: Traits): string =>
+  `${t.strands}-strand ${t.weave === 'long float' ? 'long-float' : t.weave} ${t.drift} ${t.shape === 'round' ? 'cord' : 'band'}`;

@@ -11,7 +11,7 @@ export interface FilterBarProps {
 
 /**
  * The row of chips above the grid: narrow it to braids with the traits you pick. Chips within a
- * trait widen the choice (plain or twill); chips in different traits narrow it (twill, 8 threads).
+ * trait widen the choice (diamond or regular); chips in different traits narrow it (regular, 8 threads).
  */
 export function FilterBar({ filters: f, onChange, options, nLiked }: FilterBarProps) {
   return (

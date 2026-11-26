@@ -3,6 +3,7 @@
  * (pattern, analysis and colors) so they come back without re-analyzing anything. Only the newest
  * {@link MAX_SAVED} are kept (liked ones always are), so storage can't grow without limit.
  */
+import { braidName, type Weave } from 'kumihimo';
 import { keyOf, type Card } from './model';
 
 const KEY = 'braid-explorer:finds:v1';
@@ -27,21 +28,40 @@ export function serializeFinds(finds: readonly Card[], keep: ReadonlySet<string>
   return JSON.stringify(out.reverse());
 }
 
+/** Weave names from before they followed braiders' names, and what each is called now. */
+const OLD_WEAVES: Readonly<Record<string, Weave>> = {
+  plain: 'diamond',
+  twill: 'regular',
+  'broken twill': 'mixed',
+  floating: 'Hercules',
+  'long-float': 'long float',
+};
+
+/** A card saved under an old weave name, renamed (its braid name too), so old and new finds filter together. */
+function upgrade(c: Card): Card {
+  const weave = OLD_WEAVES[c.profile.traits?.weave as string];
+  if (!weave) return c;
+  const traits = { ...c.profile.traits, weave };
+  return { ...c, profile: { ...c.profile, traits, name: braidName(traits) } };
+}
+
 /** Stored text back into pattern cards, dropping anything that doesn't look like one (old formats, hand edits). */
 export function parseFinds(text: string | null): Card[] {
   if (!text) return [];
   try {
     const data: unknown = JSON.parse(text);
     if (!Array.isArray(data)) return [];
-    return data.filter(
-      (c): c is Card =>
-        !!c &&
-        typeof c.setup?.pattern === 'string' &&
-        typeof c.setup?.slots === 'number' &&
-        Array.isArray(c.setup?.threads) &&
-        c.setup.threads.every((t: unknown) => typeof (t as { color?: unknown })?.color === 'string') &&
-        typeof c.profile?.signature === 'string',
-    );
+    return data
+      .filter(
+        (c): c is Card =>
+          !!c &&
+          typeof c.setup?.pattern === 'string' &&
+          typeof c.setup?.slots === 'number' &&
+          Array.isArray(c.setup?.threads) &&
+          c.setup.threads.every((t: unknown) => typeof (t as { color?: unknown })?.color === 'string') &&
+          typeof c.profile?.signature === 'string',
+      )
+      .map(upgrade);
   } catch {
     return [];
   }
