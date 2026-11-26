@@ -88,15 +88,20 @@ export function useExplorer(likes: ReadonlySet<string>) {
   /** Braids found during this visit. Not saved: "New" means new since the page loaded. */
   const [fresh, setFresh] = useState<ReadonlySet<string>>(() => new Set());
 
+  /** Which search is the current one: a search whose number no longer matches has been canceled. */
+  const run = useRef(0);
+
   /** Find one new braid that fits `s` (and `also`, when given); `then` gets its key (or null if none turned up). Ignored while a search runs. */
   const findOne = useCallback((s: Settings, then?: (key: string | null) => void, also?: (c: Card) => boolean) => {
     if (busy.current) return;
     busy.current = true;
+    const id = ++run.current;
     setNote('');
     const shapeFits = matches(s.shape);
     const fits = (c: Card) => shapeFits(c) && (!also || also(c));
     let n = 0;
     const step = () => {
+      if (run.current !== id) return;
       const t0 = performance.now();
       let added: string | null = null;
       while (!added && n < CAP && performance.now() - t0 < 30) {
@@ -137,6 +142,17 @@ export function useExplorer(likes: ReadonlySet<string>) {
     requestAnimationFrame(step);
   }, []);
 
+  /** Stop the search under way, if any, without adding anything. */
+  const cancel = useCallback(() => {
+    if (!busy.current) return;
+    run.current++;
+    busy.current = false;
+    setSearching(null);
+    // it may have swapped in tidier versions of braids already on the grid
+    dirty.current = true;
+    changed();
+  }, []);
+
   const recolor = useCallback((key: string) => {
     const c = found.current.get(key);
     if (!c) return;
@@ -153,6 +169,7 @@ export function useExplorer(likes: ReadonlySet<string>) {
     note,
     fresh,
     findOne,
+    cancel,
     recolor,
   };
 }

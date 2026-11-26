@@ -66,8 +66,12 @@
   justify-content: flex-end;
   margin-top: 4px;
 }
-/* phones: stack the links so the title keeps most of the row */
+/* phones: stack the links so the title keeps most of the row. The Home link goes: the site name at
+   the start of the title already leads home */
 @media (max-width: 560px) {
+  .pagehead-row .sitenav .home {
+    display: none;
+  }
   .pagehead-row .sitenav {
     flex-direction: column;
     align-items: flex-end;

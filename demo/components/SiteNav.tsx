@@ -11,7 +11,7 @@ export function SiteNav({ current }: { current: Page }) {
   return (
     <nav className="sitenav" aria-label="Site">
       {PAGES.filter(p => p.id !== current).map(p => (
-        <a key={p.id} href={p.href}>
+        <a key={p.id} href={p.href} className={p.id === 'home' ? 'home' : undefined}>
           {p.id === 'home' ? 'Home' : p.label}
         </a>
       ))}

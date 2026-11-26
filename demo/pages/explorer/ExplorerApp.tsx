@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { PatternCard, type PatternCardProps } from '../../components/PatternCard';
 import { useScrolledPast } from '../../hooks/useScrolledPast';
@@ -42,8 +43,6 @@ export function ExplorerApp() {
   const stuck = useScrolledPast(18);
   /** Sits after the last card shown: when it nears the screen, show more. */
   const more = useRef<HTMLDivElement>(null);
-  /** Set by Explore: open the feed on the find when it arrives. */
-  const openNext = useRef(false);
 
   const feedOpen = open != null;
   // the likes the Liked filter goes by: held while the feed is open, so unliking there doesn't pull cards out from under it
@@ -86,17 +85,6 @@ export function ExplorerApp() {
     setOpen(i);
   }, []);
 
-  // Explore's find opens straight into the feed (and the grid shows enough cards to include it)
-  useEffect(() => {
-    if (!openNext.current || !ex.latest) return;
-    openNext.current = false;
-    const i = keys.indexOf(ex.latest);
-    if (i < 0) return;
-    setLimit(l => Math.max(l, i + 1));
-    openAt(i);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ex.latest, ex.version]);
-
   // in the feed, near the end: find the next card from fully random settings, with the traits picked in the filter bar
   // (not while showing liked braids only: a find is never liked yet)
   useEffect(() => {
@@ -116,12 +104,53 @@ export function ExplorerApp() {
     return () => io.disconnect();
   }, [hasMore, limit]);
 
+  // closing the feed stops any search it was waiting on
+  const cancelSearch = ex.cancel;
+  // The card on screen shrinks back into its place in the grid (a view transition between the two),
+  // the grid scrolled to bring that place into view; it then gets a moment's highlight and the focus,
+  // so it's clear where you are and why. Without view transitions (or with reduced motion), it just
+  // closes onto the same place.
   const close = useCallback(() => {
-    setOpen(null);
-    setLimit(l => Math.max(l, at + 1));
-    // leave the grid showing the card that was last on screen
-    requestAnimationFrame(() => (grid.current?.children[at + 1] as HTMLElement | undefined)?.scrollIntoView({ block: 'nearest' }));
-  }, [at]);
+    cancelSearch();
+    // the grid's cards come after the settings card
+    const gridCard = () => grid.current?.children[at + 1] as HTMLElement | undefined;
+    const update = () => {
+      flushSync(() => {
+        setOpen(null);
+        setLimit(l => Math.max(l, at + 1));
+      });
+      const el = gridCard();
+      if (el) {
+        el.scrollIntoView({ block: 'center' });
+        el.style.viewTransitionName = 'opened-card';
+      }
+    };
+    const land = () => {
+      const el = gridCard();
+      if (!el) return;
+      el.style.viewTransitionName = '';
+      el.classList.remove('returned');
+      void el.offsetWidth; // restart the highlight if it's still running
+      el.classList.add('returned');
+      el.focus({ preventScroll: true });
+    };
+    const shown = document.querySelector<HTMLElement>(`.feed > .slide:nth-child(${at + 1}) .feed-card`);
+    if (!document.startViewTransition || !shown || matchMedia('(prefers-reduced-motion:reduce)').matches) {
+      update();
+      land();
+      return;
+    }
+    shown.style.viewTransitionName = 'opened-card';
+    document.startViewTransition(update).finished.finally(land);
+  }, [at, cancelSearch]);
+
+  const toTop = () => {
+    scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth' });
+    // the button hides once at the top: leave the focus at the start of the page, not lost
+    const h1 = document.querySelector<HTMLElement>('.pagehead h1');
+    h1?.setAttribute('tabindex', '-1');
+    h1?.focus({ preventScroll: true });
+  };
 
   const nPresets = [...ex.entries.values()].filter(c => c.known).length;
   const nFound = ex.entries.size - nPresets;
@@ -145,21 +174,6 @@ export function ExplorerApp() {
         floating
         stuck={stuck}
         compact={scrolled}
-        actions={
-          scrolled && (
-            <button
-              className="pagehead-actions totop"
-              onClick={() =>
-                scrollTo({
-                  top: 0,
-                  behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth',
-                })
-              }
-            >
-              ↑ Top
-            </button>
-          )
-        }
       >
         <FilterBar
           filters={filters}
@@ -181,8 +195,10 @@ export function ExplorerApp() {
           onExplore={() => {
             // a find is never liked yet: stop showing liked braids only, so it can show
             if (filters.liked) setFilters({ ...filters, liked: false });
-            openNext.current = true;
+            // open the feed on its loading slide straight away: the find lands there when it's ready
             ex.findOne(settings, undefined, fitsTraits(filters));
+            setLimit(l => Math.max(l, list.length + 1));
+            openAt(list.length);
           }}
           busy={ex.searching != null}
           status={status}
@@ -200,6 +216,10 @@ export function ExplorerApp() {
         ))}
         {hasMore && <div className="more" ref={more} aria-hidden="true" />}
       </div>
+      {/* floats at the bottom of the screen once scrolled down; out of reach (inert) while hidden */}
+      <button className="totop" data-show={scrolled || undefined} inert={!scrolled} onClick={toTop}>
+        ↑ Top
+      </button>
       {open != null && (
         <FeedOverlay
           list={list}

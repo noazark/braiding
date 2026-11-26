@@ -2,13 +2,21 @@
 export function LoadingSlide({ tried }: { tried: number }) {
   return (
     <div className="loadingbox" role="status" aria-busy="true">
+      <b>Finding a new braid…</b>
       <div className="weaving" aria-hidden="true">
         <i />
         <i />
         <i />
       </div>
-      <b>Finding a new braid…</b>
-      <span>{tried ? `${tried.toLocaleString()} patterns tried` : 'Picking a random setup'}</span>
+      <span className="tried">
+        {tried ? (
+          <>
+            <strong>{tried.toLocaleString()}</strong> patterns tried
+          </>
+        ) : (
+          "Picking a random setup"
+        )}
+      </span>
     </div>
   );
 }
