@@ -104,7 +104,7 @@ export function ExplorerApp() {
   return (
     <div className="band">
       <PageHeader
-        title="Braid explorer"
+        title="Braiding patterns"
         current="explorer"
         floating
         stuck={stuck}

@@ -1,7 +1,7 @@
 const PAGES = [
   { id: 'home', href: '../', label: 'Home' },
-  { id: 'simulator', href: '../simulator/', label: 'Braiding disk simulator' },
-  { id: 'explorer', href: '../explorer/', label: 'Braid explorer' },
+  { id: 'simulator', href: '../simulator/', label: 'Braiding simulator' },
+  { id: 'explorer', href: '../explorer/', label: 'Braiding patterns' },
 ] as const;
 
 export type Page = (typeof PAGES)[number]['id'];

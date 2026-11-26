@@ -1,7 +1,7 @@
 {
   "name": "braiding",
   "private": true,
-  "description": "A braiding-disk simulator and braid explorer.",
+  "description": "Braiding: a braiding simulator and a browser of braiding patterns.",
   "type": "module",
   "workspaces": [
     "packages/*",

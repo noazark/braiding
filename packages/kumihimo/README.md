@@ -2,7 +2,7 @@
 
 A dependency-free engine for **braiding disks**. Write a pattern, play it on a
 virtual disk, and find out whether it makes a braid and what kind. Powers the
-[braiding-disk simulator](../../README.md).
+[Braiding simulator](../../README.md).
 
 ```sh
 npm install kumihimo

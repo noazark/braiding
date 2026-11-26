@@ -78,7 +78,7 @@ export function SimulatorApp() {
 
   return (
     <div className="band">
-      <PageHeader title="Braiding disk simulator" current="simulator">
+      <PageHeader title="Braiding simulator" current="simulator">
         <p className="sub">
           A ring of slots, some threads, and a pattern of moves. Each move carries a thread across the center, over the others, into a new slot. Step through it and watch
           the strands build up.
