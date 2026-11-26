@@ -5,7 +5,7 @@
  * A thread's position in `threads` is its id everywhere else (the engine's analysis, the drawing), so
  * nothing here reorders threads. Pure functions, plus a cache of runs.
  */
-import { Timeline, parsePattern, type NotationError, type Pattern, type Preset } from 'kumihimo';
+import { Timeline, checkPattern, formatPattern, mod, parsePattern, problems, type NotationError, type Pattern, type Preset, type SlotRef, type Token } from 'kumihimo';
 import { PALETTE } from './palette';
 import { PRESET_COLORS } from './presetColors';
 
@@ -88,6 +88,146 @@ export function fromLink(hash: string): DiskSetup | null {
 
 /** The setup as text, for copying: slots, which slots hold threads (1-based), and the moves. */
 export const describe = (s: DiskSetup): string => `Slots: ${s.slots}\nThreads in slots: ${s.threads.map(t => t.slot + 1).join(', ')}\nMoves: ${s.pattern}`;
+
+// ---- resizing -------------------------------------------------------------------------------------
+
+/** How many moves {@link resizeSetup} plays to make sure the resized braid is the same braid. */
+const PROOF_MOVES = 600;
+
+/**
+ * The same braid on a disk of `slots` slots, or null if it can't be moved there unchanged.
+ *
+ * Threads keep their places around the disk, spread out (or drawn in) in proportion; every slot number
+ * in the moves is renumbered to match and disk turns are scaled. Growing spreads threads as evenly as
+ * the slots allow. Shrinking works only when every slot in use lands exactly on a slot of the smaller
+ * disk (16 → 8 with threads on odd slots, say). The result is played against the original, and refused
+ * if any move would lift a different thread or carry it over different threads (a move always takes
+ * the short way round, so respacing can turn one around; gap moves `E+3` count slots, so they rarely
+ * survive spare slots). Unreadable moves can't be renumbered, so that setup can't be resized either.
+ *
+ * @example
+ * resizeSetup(maruYotsuOn4, 8) // threads in slots 1, 3, 5, 7; moves "3*1 7*5 R2 1*3 5*7 R2"
+ */
+export function resizeSetup(s: DiskSetup, slots: number): DiskSetup | null {
+  const N = s.slots;
+  const M = slots;
+  if (M === N) return s;
+  const place = (i: number): number | null => {
+    const x = (i * M) / N;
+    if (M > N) return Math.floor(x);
+    return Number.isInteger(x) ? x : null;
+  };
+  const threads: number[] = [];
+  for (const t of s.threads) {
+    const p = place(t.slot);
+    if (p == null) return null;
+    threads.push(p);
+  }
+  const moved = (pattern: string): DiskSetup => ({ slots: M, threads: s.threads.map((t, i) => ({ ...t, slot: threads[i]! })), pattern });
+  if (!s.pattern.trim()) return moved(s.pattern);
+
+  const parsed = parsePattern(s.pattern, N);
+  if (!parsed.ok) return null;
+  const ref = (r: SlotRef): SlotRef | null => {
+    if (r.kind === 'gap') return r;
+    const p = place(r.index);
+    return p == null ? null : { kind: 'slot', index: p };
+  };
+  const tokens: Token[] = [];
+  for (const t of parsed.pattern) {
+    if (t.kind === 'turn') {
+      const by = (t.by * M) / N;
+      if (!Number.isInteger(by)) return null;
+      tokens.push({ ...t, by });
+      continue;
+    }
+    const from = ref(t.from);
+    const to = ref(t.to);
+    if (!from || !to) return null;
+    tokens.push({ ...t, from, to });
+  }
+
+  // play both and compare, move by move
+  const a = new Timeline({ slots: N, threads: s.threads.map(t => t.slot), pattern: parsed.pattern }).extend(PROOF_MOVES);
+  const b = new Timeline({ slots: M, threads, pattern: tokens }).extend(PROOF_MOVES);
+  if (a.last !== b.last || a.halt?.reason !== b.halt?.reason) return null;
+  const sorted = (xs: readonly number[]) => [...xs].sort((x, y) => x - y).join(',');
+  const same = a.steps.every((sa, i) => {
+    const sb = b.steps[i]!;
+    if (sa.positions.some((p, t) => place(p) !== sb.positions[t]) || sa.columns.some((c, t) => c !== sb.columns[t])) return false;
+    const ma = sa.move;
+    const mb = sb.move;
+    if (!ma || !mb) return ma === mb;
+    return ma.thread === mb.thread && ma.partner === mb.partner && ma.stacked === mb.stacked && sorted(ma.passed) === sorted(mb.passed);
+  });
+  return same ? moved(formatPattern(tokens)) : null;
+}
+
+/**
+ * The setup on a disk of `slots` slots, always. The same braid when {@link resizeSetup} can manage it;
+ * otherwise the nearest thing: threads to the nearest free slots (in the same order round the disk),
+ * every slot number in the moves to its nearest slot, and turns rounded (never to zero). That may
+ * braid differently, but the moves always fit the disk. Unreadable moves are left as written.
+ * Needs a slot per thread: threads past `slots` come off.
+ */
+export function scaleSetup(s: DiskSetup, slots: number): DiskSetup {
+  const exact = resizeSetup(s, slots);
+  if (exact) return exact;
+  const N = s.slots;
+  const M = slots;
+  const near = (i: number) => mod(Math.round((i * M) / N), M);
+
+  // threads in disk order, each at its nearest slot, nudged along so no two share one
+  const kept = s.threads.slice(0, M);
+  const order = kept.map((_, i) => i).sort((a, b) => kept[a]!.slot - kept[b]!.slot);
+  const at = order.map(i => Math.round((kept[i]!.slot * M) / N));
+  for (let k = 0; k < at.length; k++) at[k] = Math.max(at[k]!, k ? at[k - 1]! + 1 : 0);
+  for (let k = at.length - 1; k >= 0; k--) at[k] = Math.min(at[k]!, k === at.length - 1 ? M - 1 : at[k + 1]! - 1);
+  const slotOf = new Map<number, number>();
+  const threads = kept.slice();
+  order.forEach((i, k) => {
+    slotOf.set(kept[i]!.slot, at[k]!);
+    threads[i] = { ...kept[i]!, slot: at[k]! };
+  });
+
+  const parsed = s.pattern.trim() ? parsePattern(s.pattern, N) : null;
+  if (!parsed?.ok) return { slots: M, threads, pattern: s.pattern };
+  const ref = (r: SlotRef): SlotRef => (r.kind === 'gap' ? r : { kind: 'slot', index: slotOf.get(r.index) ?? near(r.index) });
+  const tokens = parsed.pattern.map((t): Token => {
+    if (t.kind !== 'turn') return { ...t, from: ref(t.from), to: ref(t.to) };
+    return { ...t, by: Math.round((t.by * M) / N) || Math.sign(t.by) };
+  });
+  return { slots: M, threads, pattern: formatPattern(tokens) };
+}
+
+/** The codes of a setup's errors and warnings. */
+const problemCodes = (s: DiskSetup): Set<string> => new Set(problems(checkPattern(runOf(s).timeline)).map(f => f.code));
+
+/**
+ * Whether `base` still braids when scaled to `slots` slots ({@link scaleSetup}): scaling it exactly
+ * always does; scaling it to the nearest slots does if the check finds no problem the original didn't
+ * have. Kongō Gumi on 32 slots, for one, scales to 28 or 36 but halts on 29.
+ */
+export function scalesTo(base: DiskSetup, slots: number): boolean {
+  if (slots === base.slots || resizeSetup(base, slots)) return true;
+  if (!base.pattern.trim() || runOf(base).error) return true;
+  const before = problemCodes(base);
+  return [...problemCodes(scaleSetup(base, slots))].every(c => before.has(c));
+}
+
+/**
+ * The disk size to use when someone asks for `wanted` slots, moving from `current`: `wanted` if the
+ * braid scales there ({@link scalesTo}), else the next size that works past it in the same direction,
+ * else the nearest that works on the other side. Never outside `min`–`max`.
+ */
+export function snapSlots(base: DiskSetup, current: number, wanted: number, min: number, max: number): number {
+  const n = Math.max(min, Math.min(max, wanted));
+  const ok = (k: number) => scalesTo(base, k);
+  const down = n < current;
+  for (let k = n; down ? k >= min : k <= max; k += down ? -1 : 1) if (ok(k)) return k;
+  for (let k = n; down ? k <= max : k >= min; k += down ? 1 : -1) if (ok(k)) return k;
+  return current;
+}
 
 // ---- runs -----------------------------------------------------------------------------------------
 

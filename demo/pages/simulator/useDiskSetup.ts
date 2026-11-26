@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { presets } from 'kumihimo';
-import { fromLink, fromPreset, type DiskSetup } from '../../lib/diskSetup';
+import { fromLink, fromPreset, scaleSetup, snapSlots, type DiskSetup } from '../../lib/diskSetup';
 import { PALETTE } from '../../lib/palette';
 import type { Edit } from './model';
 
@@ -13,6 +13,12 @@ interface Loaded {
   /** The pattern being written, applied on request. */
   readonly draft: string;
   readonly preset: number;
+  /**
+   * The setup as it was before the slot count started changing. Every new size is scaled from this,
+   * so stepping down and back up again returns the original instead of piling up rounding. Any other
+   * change to the threads or moves drops it.
+   */
+  readonly base?: DiskSetup;
 }
 
 const loadedFrom = (setup: DiskSetup, preset: number): Loaded => ({
@@ -57,23 +63,30 @@ export function useDiskSetup() {
         ...l,
         setup: { ...l.setup, pattern: l.draft },
         preset: CUSTOM,
+        base: undefined,
       })),
     [],
   );
 
-  /** Change the number of slots (3–64); threads past the end come off. */
+  /**
+   * Change the number of slots (3–64, and never fewer than the threads on the disk). The braid scales
+   * with the disk: exactly when it can stay the same braid, otherwise to the nearest slots
+   * ({@link scaleSetup}). Sizes it would break on are skipped ({@link snapSlots}). Each size is scaled
+   * from the setup before the size started changing.
+   */
   const setSlots = useCallback((n: number) => {
-    const slots = Math.max(3, Math.min(64, n || 32));
-    setLoaded(l => ({
-      ...l,
-      setup: {
-        ...l.setup,
-        slots,
-        threads: l.setup.threads.filter(t => t.slot < slots),
-      },
-      preset: CUSTOM,
-    }));
-    return slots;
+    setLoaded(l => {
+      const base = l.base ?? l.setup;
+      // skip sizes the braid would break on: from 32, a step down lands on 28 for Kongō Gumi
+      const slots = snapSlots(base, l.setup.slots, n || l.setup.slots, Math.max(3, l.setup.threads.length), 64);
+      if (slots === l.setup.slots) return l;
+      const scaled = scaleSetup(base, slots);
+      // colors as they are now (shuffled since, say), not as they were in the base
+      const setup = { ...scaled, threads: scaled.threads.map((t, i) => ({ ...t, color: l.setup.threads[i]?.color ?? t.color })) };
+      // a draft being written that differs from what's applied stays as it is
+      const draft = l.draft === l.setup.pattern ? setup.pattern : l.draft;
+      return { setup, draft, preset: CUSTOM, base };
+    });
   }, []);
 
   /** Apply a hand edit; color-only edits keep the preset. */
@@ -82,6 +95,8 @@ export function useDiskSetup() {
       ...l,
       setup: { ...l.setup, threads: e.threads },
       preset: e.colorOnly ? l.preset : CUSTOM,
+      // recoloring keeps the base (colors are taken as they are when scaling); anything else drops it
+      base: e.colorOnly ? l.base : undefined,
     }));
   }, []);
 

@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { presetGroupNames, presets } from 'kumihimo';
 import { HelpButton } from './HelpDialog';
 import { NotationHelp } from './NotationHelp';
@@ -8,6 +8,8 @@ export interface PatternEditorProps {
   readonly preset: number;
   readonly onPreset: (i: number) => void;
   readonly slots: number;
+  /** The fewest slots allowed: one per thread on the disk (and never under 3). */
+  readonly minSlots: number;
   readonly onSlots: (n: number) => void;
   readonly draft: string;
   readonly onDraft: (text: string) => void;
@@ -21,8 +23,15 @@ export interface PatternEditorProps {
 const groups = [...new Set(presets.map(p => p.group))];
 
 /** Choosing a preset, then the disk's size and moves as one group, with Apply and Reset under them. */
-export function PatternEditor({ preset, onPreset, slots, onSlots, draft, onDraft, onApply, onReset, error }: PatternEditorProps) {
+export function PatternEditor({ preset, onPreset, slots, minSlots, onSlots, draft, onDraft, onApply, onReset, error }: PatternEditorProps) {
   const help = useRef<HTMLDialogElement>(null);
+  // the size can come out other than typed (clamped, or skipping sizes the braid breaks on), even the
+  // size the disk already is: redraw the field on every commit so it always shows the real size
+  const [commits, setCommits] = useState(0);
+  const commitSlots = (input: HTMLInputElement) => {
+    onSlots(Number(input.value));
+    setCommits(c => c + 1);
+  };
   return (
     <>
       <label className="preset">
@@ -48,13 +57,13 @@ export function PatternEditor({ preset, onPreset, slots, onSlots, draft, onDraft
           Slots
           {/* uncontrolled while typing; the clamped value is committed on change (blur or enter) */}
           <input
-            key={slots}
+            key={`${slots}:${commits}`}
             type="number"
-            min={3}
+            min={minSlots}
             max={64}
             defaultValue={slots}
-            onBlur={e => onSlots(Number(e.target.value))}
-            onKeyDown={e => e.key === 'Enter' && onSlots(Number(e.currentTarget.value))}
+            onBlur={e => commitSlots(e.currentTarget)}
+            onKeyDown={e => e.key === 'Enter' && commitSlots(e.currentTarget)}
           />
         </label>
         <div className="moves">

@@ -94,6 +94,7 @@ export function SimulatorApp() {
                 preset={disk.preset}
                 onPreset={thenRewind(disk.loadPreset)}
                 slots={slots}
+                minSlots={Math.max(3, threads.length)}
                 onSlots={thenRewind(disk.setSlots)}
                 draft={disk.draft}
                 onDraft={disk.setDraft}
