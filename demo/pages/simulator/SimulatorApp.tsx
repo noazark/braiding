@@ -75,7 +75,6 @@ export function SimulatorApp() {
                   positions={step.positions}
                   move={step.move}
                   progress={moveT}
-                  markFrom
                   hidden={drag?.moved && drag.src.kind === 'thread' ? drag.src.ix : undefined}
                   overlay={<DragGhost drag={drag} slots={slots} brush={brush} />}
                   onPointerDown={onDiskPointerDown}

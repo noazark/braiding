@@ -41,6 +41,8 @@ select {
   font:
     700 15px "Space Grotesk",
     sans-serif;
+  /* the system's own select text color (blue in some browsers) doesn't belong here */
+  color: #000;
   border: 2.5px solid #000;
   border-radius: 10px;
   box-shadow: 3px 3px 0 #000;

@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react';
 import type { Timeline } from 'kumihimo';
 import { StrandChart } from '../../../components/StrandChart';
 import { useElementSize } from '../../../hooks/useElementSize';
-import { usePersistentState } from '../../../hooks/usePersistentState';
 import type { CheckSummary } from '../../../hooks/usePatternCheck';
 import { CheckDrawer } from './CheckDrawer';
 
@@ -18,30 +17,15 @@ export interface ChartPanelProps {
   readonly onJump: (step: number) => void;
 }
 
-function Slider({ label, min, max, value, onChange }: { label: string; min: number; max: number; value: number; onChange: (v: number) => void }) {
-  return (
-    <label
-      style={{
-        flex: '1 1 200px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        fontWeight: 600,
-      }}
-    >
-      {label}
-      <input type="range" min={min} max={max} value={value} onChange={e => onChange(Number(e.target.value))} />
-    </label>
-  );
-}
+/** How the chart is drawn: narrow columns, flat crossings, rounded S-bends. */
+const COLUMN_WIDTH = 12;
+const STEEPNESS = 0;
+const CORNER = 1.5;
 
-/** The strand chart, kept scrolled to the playhead, with its drawing settings. */
+/** The strand chart, kept scrolled to the playhead, with the pattern check over its bottom edge. */
 export function ChartPanel({ timeline, colors, playhead, check, onJump }: ChartPanelProps) {
   const box = useRef<HTMLDivElement>(null);
   const { width, height } = useElementSize(box);
-  const [colW, setColW] = usePersistentState('braidColW5', 12, v => v >= 12);
-  const [slope, setSlope] = usePersistentState('braidSlope2', 0);
-  const [corner, setCorner] = usePersistentState('braidCorner2', 1.5);
   const style = useMemo(
     () => ({
       bg: cssVar('--chartbg', '#fff'),
@@ -60,9 +44,9 @@ export function ChartPanel({ timeline, colors, playhead, check, onJump }: ChartP
           <StrandChart
             timeline={timeline}
             colors={colors}
-            columnWidth={colW}
-            steepness={slope}
-            corner={corner}
+            columnWidth={COLUMN_WIDTH}
+            steepness={STEEPNESS}
+            corner={CORNER}
             playhead={playhead}
             style={style}
             width={width}
@@ -73,11 +57,6 @@ export function ChartPanel({ timeline, colors, playhead, check, onJump }: ChartP
           />
         </div>
         <CheckDrawer check={check} open={checkOpen} onToggle={() => setCheckOpen(o => !o)} onJump={onJump} />
-      </div>
-      <div className="ctl">
-        <Slider label="Width" min={12} max={60} value={colW} onChange={setColW} />
-        <Slider label="Height" min={0} max={100} value={Math.round(slope * 100)} onChange={v => setSlope(v / 100)} />
-        <Slider label="Corners" min={0} max={200} value={Math.round(corner * 100)} onChange={v => setCorner(v / 100)} />
       </div>
     </div>
   );

@@ -148,7 +148,7 @@
   color: #000;
   font-weight: 700;
 }
-:root[data-skin="neobrutal"] .sw button:not(.erase) {
+:root[data-skin="neobrutal"] .sw button:not(.erase, .qhelp) {
   width: 32px;
   height: 32px;
   min-height: 32px;
@@ -172,7 +172,7 @@
   color: #000;
 }
 /* swatches stay their own color under the pointer (the skin's button hover would repaint them) */
-:root[data-skin="neobrutal"] .sw button:not(.erase):hover {
+:root[data-skin="neobrutal"] .sw button:not(.erase, .qhelp):hover {
   background: var(--c);
 }
 :root[data-skin="neobrutal"] .sw button.erase:hover {
@@ -866,10 +866,6 @@ td:first-child {
   white-space: nowrap;
   font-weight: 600;
 }
-.chartcard .ctl label {
-  color: var(--mut);
-  font-size: 13px;
-}
 /* ===== Layout tiers. Sizes are fixed within a tier; extra space becomes margin, nothing stretches. =====
    phone      < 700         stacked, page scrolls
    tablet     700–1279      disk panel (one column) | chart          iPads, small laptops
@@ -975,7 +971,7 @@ td:first-child {
     flex-wrap: wrap;
     gap: 6px;
   }
-  :root[data-skin="neobrutal"] .sw button:not(.erase),
+  :root[data-skin="neobrutal"] .sw button:not(.erase, .qhelp),
   :root[data-skin="neobrutal"] .sw button.erase {
     width: 26px;
     height: 26px;
@@ -1282,5 +1278,43 @@ dialog.helpdlg p {
     flex: 1 1 auto;
     min-height: 5.5em;
     resize: none;
+  }
+}
+
+/* the shuffle and (?) buttons share the swatch row but aren't swatches: a plain button, and a small
+   round (?) */
+:root[data-skin] .sw .shuffle {
+  background: var(--panel);
+  cursor: pointer;
+  touch-action: auto;
+}
+:root[data-skin] .sw .qhelp {
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  min-height: 22px;
+  border: 1.5px solid #000;
+  border-radius: 50%;
+  box-shadow: none;
+  background: transparent;
+  cursor: pointer;
+  touch-action: auto;
+  transform: none;
+}
+:root[data-skin] .sw .qhelp:hover {
+  background: #000;
+  color: #fff;
+}
+
+/* phones: the play controls get more room around them and between their buttons */
+@media (max-width: 699px) {
+  .ctl.transport,
+  .ctrlcol .ctl.transport {
+    margin-top: 26px;
+    gap: 12px;
+  }
+  .ctl.transport + .status {
+    margin-top: 12px;
+    margin-bottom: 10px;
   }
 }

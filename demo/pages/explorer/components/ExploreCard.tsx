@@ -69,7 +69,7 @@ export function ExploreCard({ settings: s, onChange, onExplore, busy, status }: 
         </select>
       </label>
       <button className="pri explore" disabled={busy} onClick={onExplore}>
-        {busy ? 'Looking…' : 'Explore'}
+        {busy ? 'Generating…' : 'Generate'}
       </button>
       <div className="foot">
         <span className="status" aria-live="polite">

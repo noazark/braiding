@@ -74,10 +74,13 @@ export function Transport({ step, playing, speed, onSpeed, threads, slots, error
           <span className="err">{error}</span>
         ) : mv ? (
           <>
-            Step <b>{n}</b>: slot {mv.from + 1} {mv.partner != null ? '⨯' : '→'} slot {mv.to + 1}
+            Move <b>{n}</b>:{' '}
+            {mv.partner != null ? `the threads in slots ${mv.from + 1} and ${mv.to + 1} swap places` : `the thread in slot ${mv.from + 1} moves to slot ${mv.to + 1}`}
           </>
+        ) : threads ? (
+          `Ready to braid: ${threads} ${threads === 1 ? 'thread' : 'threads'} on a ${slots}-slot disk`
         ) : (
-          `Step 0: loaded, ${threads} threads in ${slots} slots`
+          `An empty ${slots}-slot disk`
         )}
       </div>
     </>

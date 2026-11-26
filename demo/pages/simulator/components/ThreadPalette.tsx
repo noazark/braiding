@@ -73,13 +73,13 @@ export function ThreadPalette({ threads, brush, onBrush, onSwatchPointerDown, on
               }}
             />
           </label>
+          <button className="icon shuffle" title="Shuffle colors: give every thread a random color" aria-label="Shuffle colors" onClick={onShuffle}>
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 5h3.5c3 0 4 8 7 8H16M13.5 10.5 16 13l-2.5 2.5M2 13h3.5c1.2 0 2-1.2 2.7-2.6M10.3 7.6C11 6.2 11.8 5 13 5h3M13.5 2.5 16 5l-2.5 2.5" />
+            </svg>
+          </button>
+          <HelpButton label="How to add and move threads" onClick={() => help.current?.showModal()} />
         </div>
-        <button className="icon shuffle" title="Shuffle colors: give every thread a random color" aria-label="Shuffle colors" onClick={onShuffle}>
-          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2 5h3.5c3 0 4 8 7 8H16M13.5 10.5 16 13l-2.5 2.5M2 13h3.5c1.2 0 2-1.2 2.7-2.6M10.3 7.6C11 6.2 11.8 5 13 5h3M13.5 2.5 16 5l-2.5 2.5" />
-          </svg>
-        </button>
-        <HelpButton label="How to add and move threads" onClick={() => help.current?.showModal()} />
       </div>
       <HelpDialog ref={help} title="Threads on the disk">
         <p>Drag a color onto a slot to add a thread. Drag a thread to another slot to move it (onto a filled slot to swap), or off the disk to remove it.</p>
