@@ -550,3 +550,32 @@ button:disabled {
   opacity: 0.4;
   box-shadow: none;
 }
+
+/* phones: the filter bar is one row that swipes sideways, so the sticky header stays short. It runs
+   to the screen's edges, fading out where there's more to swipe to; Clear moves to the front so
+   it's always in reach */
+@media (max-width: 699px) {
+  .filters {
+    flex-wrap: nowrap;
+    gap: 14px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    margin-left: calc(-1 * max(2.2vw, 14px));
+    margin-right: calc(-1 * max(2.2vw, 14px));
+    padding: 2px max(2.2vw, 14px) 4px;
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+  .filters::-webkit-scrollbar {
+    display: none;
+  }
+  .filters > * {
+    flex: none;
+  }
+  .trait {
+    flex-wrap: nowrap;
+  }
+  .filters .clear {
+    order: -1;
+  }
+}
