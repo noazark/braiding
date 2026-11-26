@@ -90,6 +90,9 @@
   top: 0;
   z-index: 10;
   padding: 10px 0;
+  /* a background of its own (not just the ::before band): Safari tints its top bar from a pinned
+     header's own background color, and treats a see-through one as page content to show through */
+  background-color: var(--bg, #efefef);
   transition: padding 0.2s;
 }
 .pagehead.floating::before,
