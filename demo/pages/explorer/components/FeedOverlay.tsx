@@ -11,6 +11,11 @@ export interface FeedOverlayProps {
   /** Show a loading slide after the last card (the next one is being found). */
   readonly loading: boolean;
   readonly tried: number;
+  /** End in a slide that generates the next braid when you get to it. */
+  readonly end: boolean;
+  /** The last search gave up without finding one. */
+  readonly failed: boolean;
+  readonly onGenerate: () => void;
   /** Which card is on screen, as the reader swipes. */
   readonly onIndex: (i: number) => void;
   readonly likes: ReadonlySet<string>;
@@ -25,10 +30,11 @@ export interface FeedOverlayProps {
 /**
  * A card, opened: the cards full screen, one per swipe, in the grid's order. Only the card on screen
  * and its neighbors are drawn. Past the last card the
- * feed keeps going (the page finds more while the loading slide shows). Escape, Close, or a click
+ * feed ends in a slide that generates the next braid when you get there (the loading slide shows
+ * while it's found). Escape, Close, or a click
  * outside the card goes back to the grid.
  */
-export function FeedOverlay({ list, keys, start, loading, tried, onIndex, likes, fresh, onLike, onToggleLike, onRecolor, onClose }: FeedOverlayProps) {
+export function FeedOverlay({ list, keys, start, loading, tried, end, failed, onGenerate, onIndex, likes, fresh, onLike, onToggleLike, onRecolor, onClose }: FeedOverlayProps) {
   const scroller = useRef<HTMLDivElement>(null);
   const close = useRef<HTMLButtonElement>(null);
   /** The slide on screen: only it and its neighbors are drawn. */
@@ -75,14 +81,18 @@ export function FeedOverlay({ list, keys, start, loading, tried, onIndex, likes,
         {/* slides are keyed by position, so the loading slide at the end becomes the card that arrives in
             it (the same element): whoever is looking at it sees the card appear, instead of the scroller
             following the loading slide down to the next position */}
-        {Array.from({ length: list.length + (loading ? 1 : 0) }, (_, i) => {
+        {Array.from({ length: list.length + (loading || end ? 1 : 0) }, (_, i) => {
           const e = list[i];
           // slides further away stay empty (but full height, so scrolling and snapping are unchanged)
           const near = Math.abs(i - cur) <= 1;
           return (
             <section className="slide" key={i} onClick={ev => ev.target === ev.currentTarget && onClose()}>
               {!e ? (
-                <LoadingSlide tried={tried} />
+                loading ? (
+                  <LoadingSlide tried={tried} />
+                ) : near ? (
+                  <EndSlide failed={failed} onGenerate={onGenerate} />
+                ) : null
               ) : near ? (
                 <FindSlide
                   card={e}
@@ -100,6 +110,22 @@ export function FeedOverlay({ list, keys, start, loading, tried, onIndex, likes,
       <div className="hint" aria-hidden="true">
         Swipe or scroll for more ↓
       </div>
+    </div>
+  );
+}
+
+/**
+ * The slide after the last card, while nothing is being found: getting here starts a search (so it's
+ * seen only for a moment), or, after one gave up, offers to try again.
+ */
+function EndSlide({ failed, onGenerate }: { failed: boolean; onGenerate: () => void }) {
+  return (
+    <div className="loadingbox" role="status">
+      <b>{failed ? 'Nothing new this time' : 'That’s all of them'}</b>
+      <span className="tried">{failed ? 'No new braid turned up this time. Try again, or loosen the filters.' : 'Generate a new braid to keep going.'}</span>
+      <button className="pri" onClick={onGenerate}>
+        Generate
+      </button>
     </div>
   );
 }

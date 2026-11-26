@@ -9,6 +9,14 @@ const random = Math.random;
 /** Give up on a search after this many patterns. */
 const CAP = 40000;
 
+/** How {@link useExplorer}'s `findOne` searches. */
+export interface FindOptions {
+  /** A further test a find has to pass (the filter bar's traits). */
+  readonly also?: (c: Card) => boolean;
+  /** Keep the find aside instead of adding it (finding one ahead of being asked for it). */
+  readonly hold?: boolean;
+}
+
 /**
  * The pattern cards (starting with the presets) and the search that adds to them. Each search runs
  * until it finds one braid that isn't on the grid yet, fits its settings, and has no needless moves
@@ -90,9 +98,17 @@ export function useExplorer(likes: ReadonlySet<string>) {
 
   /** Which search is the current one: a search whose number no longer matches has been canceled. */
   const run = useRef(0);
+  /**
+   * A braid found ahead of time ({@link FindOptions.hold}): kept here, not on the grid or saved,
+   * until {@link reveal} adds it.
+   */
+  const [held, setHeld] = useState<{ readonly key: string; readonly card: Card } | null>(null);
 
-  /** Find one new braid that fits `s` (and `also`, when given); `then` gets its key (or null if none turned up). Ignored while a search runs. */
-  const findOne = useCallback((s: Settings, then?: (key: string | null) => void, also?: (c: Card) => boolean) => {
+  /**
+   * Find one new braid that fits `s` (and `also`, when given), and add it. With `hold`, keep it aside
+   * instead (see `held`). Ignored while a search runs.
+   */
+  const findOne = useCallback((s: Settings, { also, hold = false }: FindOptions = {}) => {
     if (busy.current) return;
     busy.current = true;
     const id = ++run.current;
@@ -121,18 +137,21 @@ export function useExplorer(likes: ReadonlySet<string>) {
         if (waste(f) > 0) continue;
         const card = cardFromFind(f, colorize(f.profile.strands, random), KNOWN.get(key) ?? null);
         if (!fits(card)) continue;
-        found.current.set(key, card);
         added = key;
-        setFresh(prev => new Set(prev).add(key));
+        if (hold) setHeld({ key, card });
+        else {
+          found.current.set(key, card);
+          setFresh(prev => new Set(prev).add(key));
+        }
       }
       if (added || n >= CAP) {
         if (!added) setNote(` · no new braid in ${CAP.toLocaleString()} tries; try other settings`);
-        setLatest(added);
+        if (!hold) setLatest(added);
         setSearching(null);
         busy.current = false;
+        // even a held search may have swapped in tidier versions of braids already on the grid
         dirty.current = true;
         changed();
-        then?.(added);
       } else {
         setSearching(n);
         requestAnimationFrame(step);
@@ -142,8 +161,22 @@ export function useExplorer(likes: ReadonlySet<string>) {
     requestAnimationFrame(step);
   }, []);
 
-  /** Stop the search under way, if any, without adding anything. */
+  /** Add the braid found ahead (if one is held) to the grid, as a new find. */
+  const reveal = useCallback(() => {
+    if (!held) return;
+    if (!found.current.has(held.key)) {
+      found.current.set(held.key, held.card);
+      setFresh(prev => new Set(prev).add(held.key));
+      setLatest(held.key);
+      dirty.current = true;
+      changed();
+    }
+    setHeld(null);
+  }, [held]);
+
+  /** Stop the search under way, if any, and drop a braid found ahead: neither adds anything. */
   const cancel = useCallback(() => {
+    setHeld(null);
     if (!busy.current) return;
     run.current++;
     busy.current = false;
@@ -169,6 +202,8 @@ export function useExplorer(likes: ReadonlySet<string>) {
     note,
     fresh,
     findOne,
+    held: held != null,
+    reveal,
     cancel,
     recolor,
   };

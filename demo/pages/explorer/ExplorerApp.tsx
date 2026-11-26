@@ -17,8 +17,6 @@ const GridCard = memo(function GridCard({ index, onOpenAt, ...rest }: Omit<Patte
 
 /** Cards added to the grid at a time, as its end comes near the screen. */
 const PAGE = 24;
-/** While a card is open, keep this many cards found past the one on screen, so a swipe lands on one that's ready. */
-const AHEAD = 1;
 
 /**
  * The explorer: a grid of pattern cards led by the settings card, shown a few at a time as you scroll. Opening a card (or a new find)
@@ -85,14 +83,28 @@ export function ExplorerApp() {
     setOpen(i);
   }, []);
 
-  // in the feed, near the end: find the next card from fully random settings, with the traits picked in the filter bar
-  // (not while showing liked braids only: a find is never liked yet)
+  /**
+   * Find one more braid for the feed (fully random settings, with the traits picked in the filter bar),
+   * held aside: it joins the list only once it's scrolled to.
+   */
+  const findAhead = () => ex.findOne(randomSettings(Math.random, settings.shape), { also: fitsTraits(filters), hold: true });
+  /** The feed ends in a slide that generates: not while showing liked braids only (a find is never liked yet). */
+  const canGenerate = !filters.liked;
+  /** The end slide is on screen. */
+  const atEnd = at === list.length;
+
+  // In the feed, one braid is found ahead, from the last card on, and kept aside. Getting to the end
+  // slide adds it (or, still being found, the loading slide shows until it's in); then, on the new last
+  // card, the next one is found ahead. A search that gives up isn't retried by itself: the end slide
+  // offers Generate.
   useEffect(() => {
-    if (feedOpen && !filters.liked && ex.searching == null && at >= list.length - 1 - AHEAD) {
-      ex.findOne(randomSettings(Math.random, settings.shape), undefined, fitsTraits(filters));
+    if (!feedOpen || !canGenerate) return;
+    if (atEnd && ex.held) {
       setLimit(l => Math.max(l, list.length + 1));
-    }
-  }, [feedOpen, at, list.length, ex, settings.shape, filters]);
+      ex.reveal();
+    } else if (at >= list.length - 1 && !ex.held && ex.searching == null && !ex.note) findAhead();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedOpen, at, list.length, ex.held, ex.searching]);
 
   // the end of the grid near the screen: show the next few cards
   const hasMore = list.length > limit;
@@ -193,7 +205,7 @@ export function ExplorerApp() {
             // a find is never liked yet: stop showing liked braids only, so it can show
             if (filters.liked) setFilters({ ...filters, liked: false });
             // open the feed on its loading slide straight away: the find lands there when it's ready
-            ex.findOne(settings, undefined, fitsTraits(filters));
+            ex.findOne(settings, { also: fitsTraits(filters) });
             setLimit(l => Math.max(l, list.length + 1));
             openAt(list.length);
           }}
@@ -222,8 +234,12 @@ export function ExplorerApp() {
           list={list}
           keys={keys}
           start={open}
-          loading={ex.searching != null}
+          // the end slide shows loading while the next braid is being found, or is found and about to join
+          loading={ex.searching != null || ex.held}
           tried={ex.searching ?? 0}
+          end={canGenerate}
+          failed={!!ex.note}
+          onGenerate={findAhead}
           onIndex={setAt}
           likes={likes}
           fresh={ex.fresh}
