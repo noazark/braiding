@@ -107,8 +107,8 @@ export function ExplorerApp() {
   // closing the feed stops any search it was waiting on
   const cancelSearch = ex.cancel;
   // The card on screen shrinks back into its place in the grid (a view transition between the two),
-  // the grid scrolled to bring that place into view; it then gets a moment's highlight and the focus,
-  // so it's clear where you are and why. Without view transitions (or with reduced motion), it just
+  // the grid scrolled to bring that place into view; it then takes the focus, so it's clear where you
+  // are and why. Without view transitions (or with reduced motion), it just
   // closes onto the same place.
   const close = useCallback(() => {
     cancelSearch();
@@ -129,9 +129,6 @@ export function ExplorerApp() {
       const el = gridCard();
       if (!el) return;
       el.style.viewTransitionName = '';
-      el.classList.remove('returned');
-      void el.offsetWidth; // restart the highlight if it's still running
-      el.classList.add('returned');
       el.focus({ preventScroll: true });
     };
     const shown = document.querySelector<HTMLElement>(`.feed > .slide:nth-child(${at + 1}) .feed-card`);

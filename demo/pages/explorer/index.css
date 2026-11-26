@@ -603,8 +603,7 @@ button:disabled {
   translate: -50% 0;
 }
 
-/* closing a card: it shrinks back into its place in the grid (see ExplorerApp's close), then that
-   place flashes so you can see where you landed */
+/* closing a card: it shrinks back into its place in the grid (see ExplorerApp's close) */
 ::view-transition-group(opened-card) {
   animation-duration: 0.35s;
   animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -614,20 +613,6 @@ button:disabled {
   height: 100%;
   object-fit: cover;
   object-position: top;
-}
-.card.returned {
-  animation: returned 1.2s ease-out;
-}
-@keyframes returned {
-  0%,
-  30% {
-    outline: 4px solid #000;
-    outline-offset: 6px;
-  }
-  100% {
-    outline: 4px solid transparent;
-    outline-offset: 6px;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .totop {
