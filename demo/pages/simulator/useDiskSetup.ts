@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { presets } from 'kumihimo';
-import { fromLink, fromPreset, scaleSetup, snapSlots, type DiskSetup } from '../../lib/diskSetup';
+import { fromLink, fromPreset, type DiskSetup } from '../../lib/diskSetup';
+import { resizeSetup, snapSlots } from '../../lib/diskSize';
+import { MAX_SLOTS, loadDisk, onMyDisk, useMyDisk, type MyDisk } from '../../lib/myDisk';
 import { colorway } from '../../lib/colorways';
 import type { Edit } from './model';
 
@@ -14,37 +16,88 @@ interface Loaded {
   readonly draft: string;
   readonly preset: number;
   /**
-   * The setup as it was before the slot count started changing. Every new size is scaled from this,
-   * so stepping down and back up again returns the original instead of piling up rounding. Any other
-   * change to the threads or moves drops it.
+   * The setup as it was loaded (a preset, a link), before it went on your disk or changed size. Every
+   * new size is worked out from this, so changing size and back returns the original. Any other change
+   * to the threads or moves drops it.
    */
   readonly base?: DiskSetup;
+  /** False when the braid can't go on your disk, so it's shown on a disk of its own size instead. */
+  readonly fits: boolean;
 }
 
-const loadedFrom = (setup: DiskSetup, preset: number): Loaded => ({
-  setup,
-  draft: setup.pattern,
-  preset,
+/** The presets as disk setups, made once, so whether each goes on a disk is worked out once too. */
+const PRESETS = presets.map(fromPreset);
+
+/** Whether preset `i` goes on your disk. */
+export const presetFits = (i: number, disk: MyDisk): boolean => !!PRESETS[i] && onMyDisk(PRESETS[i], disk).fits;
+
+/** Preset `i` if it goes on your disk, else the next one in the list that does (round to the start); -1 if none does. */
+export function fittingPreset(i: number, disk: MyDisk): number {
+  for (let k = 0; k < PRESETS.length; k++) {
+    const j = (i + k) % PRESETS.length;
+    if (presetFits(j, disk)) return j;
+  }
+  return -1;
+}
+
+/** A setup just loaded, moved onto your disk. */
+const placed = (base: DiskSetup, preset: number, disk: MyDisk): Loaded => {
+  const { setup, fits } = onMyDisk(base, disk);
+  return { setup, draft: setup.pattern, preset, base, fits };
+};
+
+/** The same loaded braid on another disk size, keeping its colors as they are now and any draft being written. */
+const moved = (l: Loaded, setup: DiskSetup, fits: boolean, base: DiskSetup): Loaded => ({
+  setup: { ...setup, threads: setup.threads.map((t, i) => ({ ...t, color: l.setup.threads[i]?.color ?? t.color })) },
+  draft: l.draft === l.setup.pattern ? setup.pattern : l.draft,
+  preset: l.preset,
+  base,
+  fits,
 });
 
 /** What the page opens with: a setup shared in the link (from the explorer's Open), else the first preset. */
 function initial(): Loaded {
+  const disk = loadDisk();
   const shared = fromLink(location.hash);
-  return shared ? loadedFrom(shared, CUSTOM) : loadedFrom(fromPreset(presets[0]!), 0);
+  if (shared) return placed(shared, CUSTOM, disk);
+  const i = Math.max(0, fittingPreset(0, disk));
+  return placed(PRESETS[i]!, i, disk);
 }
 
 /**
  * What's loaded on the disk: one disk setup (what plays), the pattern being written, and which preset
- * it is, if any. Starts on a setup shared in the link, or the first preset.
+ * it is, if any. Starts on a setup shared in the link, or the first preset. Everything loaded goes on
+ * your disk (see myDisk.ts), and follows it when it changes.
  */
 export function useDiskSetup() {
-  const [{ setup, draft, preset }, setLoaded] = useState(initial);
+  const [disk] = useMyDisk();
+  const [{ setup, draft, preset, fits }, setLoaded] = useState(initial);
+  const diskNow = useRef(disk);
+  diskNow.current = disk;
+
+  // your disk changed (here or on another page): the braid moves onto the new one
+  const lastDisk = useRef(disk);
+  useEffect(() => {
+    if (lastDisk.current === disk) return;
+    lastDisk.current = disk;
+    setLoaded(l => {
+      // a preset that doesn't go on the new disk gives way to the next one in the list that does;
+      // anything else stays, with a warning if it doesn't fit
+      if (l.preset !== CUSTOM && !presetFits(l.preset, disk)) {
+        const j = fittingPreset(l.preset, disk);
+        if (j >= 0) return placed(PRESETS[j]!, j, disk);
+      }
+      const base = l.base ?? l.setup;
+      const { setup, fits } = onMyDisk(base, disk);
+      return moved(l, setup, fits, base);
+    });
+  }, [disk]);
 
   // a new setup in the link while the page is open (say, another Open from the explorer) loads too
   useEffect(() => {
     const onHash = () => {
       const s = fromLink(location.hash);
-      if (s) setLoaded(loadedFrom(s, CUSTOM));
+      if (s) setLoaded(placed(s, CUSTOM, diskNow.current));
     };
     addEventListener('hashchange', onHash);
     return () => removeEventListener('hashchange', onHash);
@@ -52,7 +105,7 @@ export function useDiskSetup() {
 
   const loadPreset = useCallback((i: number) => {
     const p = presets[i];
-    setLoaded(l => (p ? loadedFrom(fromPreset(p), i) : { ...l, preset: CUSTOM }));
+    setLoaded(l => (p ? placed(PRESETS[i]!, i, diskNow.current) : { ...l, preset: CUSTOM }));
   }, []);
 
   const setDraft = useCallback((draft: string) => setLoaded(l => ({ ...l, draft })), []);
@@ -69,23 +122,16 @@ export function useDiskSetup() {
   );
 
   /**
-   * Change the number of slots (3–64, and never fewer than the threads on the disk). The braid scales
-   * with the disk: exactly when it can stay the same braid, otherwise to the nearest slots
-   * ({@link scaleSetup}). Sizes it would break on are skipped ({@link snapSlots}). Each size is scaled
-   * from the setup before the size started changing.
+   * Change the number of slots, on any disk (3–32, never fewer than the threads on it). The braid moves
+   * with it, the same braid; sizes it can't go on are skipped ({@link snapSlots}). Each size is worked
+   * out from the setup as it was loaded.
    */
   const setSlots = useCallback((n: number) => {
     setLoaded(l => {
       const base = l.base ?? l.setup;
-      // skip sizes the braid would break on: from 32, a step down lands on 28 for Kongō Gumi
-      const slots = snapSlots(base, l.setup.slots, n || l.setup.slots, Math.max(3, l.setup.threads.length), 64);
-      if (slots === l.setup.slots) return l;
-      const scaled = scaleSetup(base, slots);
-      // colors as they are now (shuffled since, say), not as they were in the base
-      const setup = { ...scaled, threads: scaled.threads.map((t, i) => ({ ...t, color: l.setup.threads[i]?.color ?? t.color })) };
-      // a draft being written that differs from what's applied stays as it is
-      const draft = l.draft === l.setup.pattern ? setup.pattern : l.draft;
-      return { setup, draft, preset: CUSTOM, base };
+      const slots = snapSlots(base, l.setup.slots, n || l.setup.slots, Math.max(3, l.setup.threads.length), MAX_SLOTS);
+      const next = slots === l.setup.slots ? null : resizeSetup(base, slots);
+      return next ? moved(l, next, true, base) : l;
     });
   }, []);
 
@@ -123,19 +169,22 @@ export function useDiskSetup() {
     });
   }, []);
 
-  /** Start over: no threads on the disk and no moves (the slots stay). */
+  /** Start over: no threads and no moves, on your disk (or, on any disk, the size it is now). */
   const reset = useCallback(
     () =>
       setLoaded(l => ({
-        setup: { ...l.setup, threads: [], pattern: '' },
+        setup: { slots: diskNow.current === 'any' ? l.setup.slots : diskNow.current, threads: [], pattern: '' },
         draft: '',
         preset: CUSTOM,
+        fits: true,
       })),
     [],
   );
 
   return {
     setup,
+    disk,
+    fits,
     draft,
     setDraft,
     preset,

@@ -39,7 +39,9 @@ export function SimulatorApp() {
   const step = timeline.steps[playhead.step]!;
   // each step forward plays its move: within the step's time while playing (a little under, so it lands
   // before the next one starts), at an easy pace when stepping by hand
-  const moveT = useMoveTween(playhead.step, playhead.playing ? playhead.stepMs * 0.9 : 360, playhead.reducedMotion);
+  // and each step back plays the move it undoes backwards
+  const tween = useMoveTween(playhead.step, playhead.playing ? playhead.stepMs * 0.9 : 360, playhead.reducedMotion);
+  const drawn = timeline.steps[tween.shown] ?? step;
   // only a real stop is an error here: a move from an empty slot. No threads or no moves is just empty.
   const error = !run.error && timeline.halt?.reason === 'empty-slot' ? haltText(timeline.halt) : '';
   // anything that changes the disk starts again from the loaded disk
@@ -72,9 +74,9 @@ export function SimulatorApp() {
                   svgRef={svg}
                   slots={slots}
                   colors={colors}
-                  positions={step.positions}
-                  move={step.move}
-                  progress={moveT}
+                  positions={drawn.positions}
+                  move={drawn.move}
+                  progress={tween.t}
                   hidden={drag?.moved && drag.src.kind === 'thread' ? drag.src.ix : undefined}
                   overlay={<DragGhost drag={drag} slots={slots} brush={brush} />}
                   onPointerDown={onDiskPointerDown}
@@ -95,6 +97,8 @@ export function SimulatorApp() {
                 preset={disk.preset}
                 onPreset={thenRewind(disk.loadPreset)}
                 slots={slots}
+                disk={disk.disk}
+                fits={disk.fits}
                 minSlots={Math.max(3, threads.length)}
                 onSlots={thenRewind(disk.setSlots)}
                 draft={disk.draft}

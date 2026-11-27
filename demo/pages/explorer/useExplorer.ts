@@ -1,13 +1,34 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { generators, presets, refineCandidate } from 'kumihimo';
 import { afterLoad } from '../../lib/afterLoad';
 import { KNOWN, cardFromFind, colorize, colorsOf, keyOf, knowPresets, matches, pickFamily, presetCardAt, presetStamp, waste, withColors, type Card, type Settings } from './model';
 import { loadFinds, loadPresetCards, saveFinds, savePresetCards } from './storage';
+import { onMyDisk, useMyDisk, type MyDisk } from '../../lib/myDisk';
+import { THREADS } from './model';
 
 /** Exploring is meant to surprise: fresh randomness each visit. */
 const random = Math.random;
 /** Give up on a search after this many patterns. */
 const CAP = 40000;
+
+/** The most threads a braid for your disk can have: one per slot, and no more than the explorer makes. */
+export const threadsFor = (d: MyDisk): number => (d === 'any' ? THREADS.max : Math.min(THREADS.max, d));
+
+const placed = new WeakMap<Card, Map<MyDisk, Card | null>>();
+
+/**
+ * A card on your disk: the same braid, its setup moved onto your disk so Open gives you what you'll
+ * braid; null if it can't go there. Worked out once per card and disk.
+ */
+export function onDisk(c: Card, d: MyDisk): Card | null {
+  let m = placed.get(c);
+  if (!m) placed.set(c, (m = new Map()));
+  if (!m.has(d)) {
+    const r = onMyDisk(c.setup, d);
+    m.set(d, r.fits ? (r.setup === c.setup ? c : { ...c, setup: r.setup }) : null);
+  }
+  return m.get(d)!;
+}
 
 /** How {@link useExplorer}'s `findOne` searches. */
 export interface FindOptions {
@@ -25,6 +46,9 @@ export interface FindOptions {
  * responsive.
  */
 export function useExplorer(likes: ReadonlySet<string>) {
+  const [disk] = useMyDisk();
+  const diskNow = useRef(disk);
+  diskNow.current = disk;
   // the presets as saved from an earlier visit (if the presets and engine are unchanged), then the
   // finds saved from earlier visits: both come back whole, with nothing to work out, so they show straight away
   const [{ initial, presetsSaved }] = useState(() => {
@@ -122,7 +146,7 @@ export function useExplorer(likes: ReadonlySet<string>) {
       let added: string | null = null;
       while (!added && n < CAP && performance.now() - t0 < 30) {
         n++;
-        const c = generators[pickFamily(random, s.family)](s.maxThreads, random);
+        const c = generators[pickFamily(random, s.family)](Math.min(s.maxThreads, threadsFor(diskNow.current)), random);
         const f = c && refineCandidate(c, { random });
         if (!f) continue;
         const key = f.profile.signature;
@@ -136,7 +160,8 @@ export function useExplorer(likes: ReadonlySet<string>) {
         // only patterns where every move counts: none whose crossings undo each other
         if (waste(f) > 0) continue;
         const card = cardFromFind(f, colorize(f.profile.strands, random), KNOWN.get(key) ?? null);
-        if (!fits(card)) continue;
+        // only braids for your disk
+        if (!fits(card) || !onDisk(card, diskNow.current)) continue;
         added = key;
         if (hold) setHeld({ key, card });
         else {
@@ -194,8 +219,21 @@ export function useExplorer(likes: ReadonlySet<string>) {
     changed();
   }, []);
 
+  // what's shown: the cards that go on your disk, set up on it (finds and presets are kept as found,
+  // so changing disks brings back the ones that go on the new one)
+  const entries = useMemo(
+    () => new Map([...found.current].flatMap(([k, c]) => {
+      const d = onDisk(c, disk);
+      return d ? [[k, d] as const] : [];
+    })),
+    // `version` says when the cards changed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [version, disk],
+  );
+
   return {
-    entries: found.current,
+    disk,
+    entries,
     version,
     searching,
     latest,

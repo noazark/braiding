@@ -2,12 +2,18 @@ import { useRef, useState } from 'react';
 import { presetGroupNames, presets } from 'kumihimo';
 import { HelpButton, openHelp } from './HelpDialog';
 import { NotationHelp } from './NotationHelp';
-import { CUSTOM } from '../useDiskSetup';
+import { DiskSelect } from '../../../components/DiskSelect';
+import { CUSTOM, presetFits } from '../useDiskSetup';
+import { MAX_SLOTS, type MyDisk } from '../../../lib/myDisk';
 
 export interface PatternEditorProps {
   readonly preset: number;
   readonly onPreset: (i: number) => void;
   readonly slots: number;
+  /** Your disk: on a fixed one the slot count is the disk's, so there's no Slots field. */
+  readonly disk: MyDisk;
+  /** False when the braid can't go on your disk, and is shown on one of its own size. */
+  readonly fits: boolean;
   /** The fewest slots allowed: one per thread on the disk (and never under 3). */
   readonly minSlots: number;
   readonly onSlots: (n: number) => void;
@@ -22,8 +28,8 @@ export interface PatternEditorProps {
 
 const groups = [...new Set(presets.map(p => p.group))];
 
-/** Choosing a preset, then the disk's size and moves as one group, with Apply and Reset under them. */
-export function PatternEditor({ preset, onPreset, slots, minSlots, onSlots, draft, onDraft, onApply, onReset, error }: PatternEditorProps) {
+/** Your disk, then a preset (only those that go on it), then the moves, with Apply and Reset under them. */
+export function PatternEditor({ preset, onPreset, slots, disk, fits, minSlots, onSlots, draft, onDraft, onApply, onReset, error }: PatternEditorProps) {
   const help = useRef<HTMLDialogElement>(null);
   // the size can come out other than typed (clamped, or skipping sizes the braid breaks on), even the
   // size the disk already is: redraw the field on every commit so it always shows the real size
@@ -34,6 +40,24 @@ export function PatternEditor({ preset, onPreset, slots, minSlots, onSlots, draf
   };
   return (
     <>
+      <div className="diskrow">
+        <DiskSelect />
+        {disk === 'any' && (
+          <label className="slots">
+            Slots
+            {/* uncontrolled while typing; the clamped value is committed on change (blur or enter) */}
+            <input
+              key={`${slots}:${commits}`}
+              type="number"
+              min={minSlots}
+              max={MAX_SLOTS}
+              defaultValue={slots}
+              onBlur={e => commitSlots(e.currentTarget)}
+              onKeyDown={e => e.key === 'Enter' && commitSlots(e.currentTarget)}
+            />
+          </label>
+        )}
+      </div>
       <label className="preset">
         Preset
         <select value={preset} onChange={e => onPreset(Number(e.target.value))}>
@@ -41,7 +65,8 @@ export function PatternEditor({ preset, onPreset, slots, minSlots, onSlots, draf
             <optgroup key={g} label={presetGroupNames[g]}>
               {presets.map((p, i) =>
                 p.group === g ? (
-                  <option key={p.id} value={i}>
+                  // a preset that can't go on your disk can't be picked
+                  <option key={p.id} value={i} disabled={!presetFits(i, disk)}>
                     {p.name}
                   </option>
                 ) : null,
@@ -52,20 +77,14 @@ export function PatternEditor({ preset, onPreset, slots, minSlots, onSlots, draf
         </select>
       </label>
       <fieldset className="patgroup">
-        <legend className="vh">Disk and moves</legend>
-        <label className="slots">
-          Slots
-          {/* uncontrolled while typing; the clamped value is committed on change (blur or enter) */}
-          <input
-            key={`${slots}:${commits}`}
-            type="number"
-            min={minSlots}
-            max={64}
-            defaultValue={slots}
-            onBlur={e => commitSlots(e.currentTarget)}
-            onKeyDown={e => e.key === 'Enter' && commitSlots(e.currentTarget)}
-          />
-        </label>
+        <legend className="vh">Moves</legend>
+        {!fits && (
+          <p className="nofit" role="status">
+            {disk === 'any'
+              ? `This braid needs ${slots} slots, more than any disk here.`
+              : `This braid doesn't fit ${disk === 8 ? 'an' : 'a'} ${disk}-slot disk. It's shown on ${slots} slots.`}
+          </p>
+        )}
         <div className="moves">
           <span className="moves-head">
             <label htmlFor="pat">Moves</label>

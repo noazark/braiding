@@ -373,8 +373,9 @@ button:focus-visible,
 select:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid var(--acc);
-  outline-offset: 2px;
+  /* no ring round it (a halo): keyboard focus shows as a deeper shadow instead */
+  outline: none;
+  box-shadow: 5px 5px 0 #000;
 }
 .icon {
   background: transparent;
@@ -621,8 +622,7 @@ label {
   box-shadow: none;
 }
 .addc:focus-within {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
+  outline: none;
 }
 .addc input {
   position: absolute;
@@ -1108,6 +1108,27 @@ td:first-child {
   display: grid;
   gap: 10px;
 }
+/* your disk, and on any size its slot count beside it: first in the panel, above the presets */
+.diskrow {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+.disksel {
+  display: grid;
+  gap: 4px;
+}
+/* a braid that can't go on your disk, shown on its own size */
+.patgroup .nofit {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #ffc21a;
+  border: 2px solid #000;
+  border-radius: 8px;
+}
 .patgroup .slots input {
   width: 84px;
 }
@@ -1280,6 +1301,7 @@ dialog.helpdlg p {
     order: 5;
     margin-top: 18px;
   }
+  .diskrow,
   .preset,
   .patgroup {
     order: 6;

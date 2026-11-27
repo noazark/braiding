@@ -1,6 +1,6 @@
 import { describe as group, expect, it } from 'vitest';
 import { presets } from 'kumihimo';
-import { describe, fromLink, fromPreset, paletteColor, resizeSetup, runOf, scaleSetup, scalesTo, snapSlots, toLink, type DiskSetup } from './diskSetup';
+import { describe, fromLink, fromPreset, paletteColor, runOf, toLink, type DiskSetup } from './diskSetup';
 import { PALETTE } from './palette';
 import { PRESET_COLORS } from './presetColors';
 
@@ -100,79 +100,5 @@ group('runs', () => {
     expect(run.error?.code).toBe('unreadable');
     expect(run.pattern).toEqual([]);
     expect(run.timeline.at(1)).toBeUndefined();
-  });
-});
-
-group('resizing', () => {
-  const preset = (id: string) => fromPreset(presets.find(p => p.id === id)!);
-
-  it('spreads threads out and renumbers the moves when the disk grows', () => {
-    const big = resizeSetup(preset('maru-yotsu-round-4-threads'), 8)!;
-    expect(big.threads.map(t => t.slot)).toEqual([0, 2, 4, 6]);
-    expect(big.pattern).toBe('3*1 7*5 R2 1*3 5*7 R2');
-  });
-
-  it('draws threads back in when every one lands on a slot', () => {
-    const s = preset('basket-weave-8-threads');
-    expect(resizeSetup(resizeSetup(s, 32)!, 8)).toEqual({ ...s, pattern: '1*2 3*4 5*6 7*8 3*2 5*4 7*6 1*8' });
-  });
-
-  it('keeps colors with their threads', () => {
-    const s = preset('basket-weave-6-threads');
-    expect(resizeSetup(s, 12)!.threads.map(t => t.color)).toEqual(s.threads.map(t => t.color));
-  });
-
-  it("refuses when it can't stay the same braid", () => {
-    // Kongō Gumi's threads sit on odd slots: they'd land between slots on 16
-    expect(resizeSetup(preset('kongo-gumi-spiral-8-threads'), 16)).toBeNull();
-    // R1 on 4 slots would be a turn of 1.5 on 6
-    expect(resizeSetup(preset('maru-yotsu-round-4-threads'), 6)).toBeNull();
-  });
-});
-
-group('scaling to any size', () => {
-  it('scales exactly when it can', () => {
-    const s = fromPreset(presets.find(p => p.id === 'maru-yotsu-round-4-threads')!);
-    expect(scaleSetup(s, 8)).toEqual(resizeSetup(s, 8));
-  });
-
-  it('otherwise moves everything to the nearest slots, so the moves still fit', () => {
-    for (const p of presets)
-      for (const n of [p.threads.length, 13, 29, 40]) {
-        if (n < p.threads.length) continue;
-        const s = scaleSetup(fromPreset(p), n);
-        const label = `${p.name} on ${n}`;
-        expect(s.slots, label).toBe(n);
-        expect(new Set(s.threads.map(t => t.slot)).size, label).toBe(p.threads.length);
-        expect(s.threads.every(t => t.slot >= 0 && t.slot < n), label).toBe(true);
-        expect(runOf(s).error, label).toBeNull();
-      }
-  });
-
-  it('keeps threads in the same order round the disk', () => {
-    const s = scaleSetup(fromPreset(presets.find(p => p.id === 'kongo-gumi-16-threads')!), 17);
-    const slots = s.threads.map(t => t.slot);
-    expect(slots).toEqual([...slots].sort((a, b) => a - b));
-  });
-});
-
-group('choosing a size', () => {
-  const kongo = fromPreset(presets.find(p => p.id === 'kongo-gumi-spiral-8-threads')!);
-
-  it('knows which sizes a braid survives', () => {
-    expect(scalesTo(kongo, 28)).toBe(true);
-    expect(scalesTo(kongo, 29)).toBe(false);
-  });
-
-  it('skips sizes the braid would break on, in the direction asked', () => {
-    expect(snapSlots(kongo, 32, 31, 8, 64)).toBe(28);
-    expect(snapSlots(kongo, 32, 29, 8, 64)).toBe(28);
-    expect(snapSlots(kongo, 32, 33, 8, 64)).toBe(36);
-    expect(snapSlots(kongo, 32, 28, 8, 64)).toBe(28);
-  });
-
-  it('stays within the limits', () => {
-    expect(snapSlots(kongo, 32, 100, 8, 64)).toBeLessThanOrEqual(64);
-    expect(snapSlots(kongo, 32, 2, 8, 64)).toBeGreaterThanOrEqual(8);
   });
 });

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { DEFAULT_SETTINGS, THREADS, type FamilyChoice, type Settings, type Shape } from '../model';
+import { DiskSelect } from '../../../components/DiskSelect';
+import { DEFAULT_SETTINGS, type FamilyChoice, type Settings, type Shape } from '../model';
 
 export interface ExploreCardProps {
   readonly settings: Settings;
@@ -23,15 +24,16 @@ const SHAPES: [Shape, string][] = [
 ];
 
 /**
- * The first card in the grid: what kind of braid to look for, and the button that finds the next
- * one. Same shape as a pattern card, so it reads as part of the deck.
+ * The first card in the grid: your disk, what kind of braid to look for, and the button that finds the
+ * next one. Same shape as a pattern card, so it reads as part of the deck.
  */
 export function ExploreCard({ settings: s, onChange, onExplore, busy, status }: ExploreCardProps) {
   const set = <K extends keyof Settings>(k: K, v: Settings[K]) => onChange({ ...s, [k]: v });
-  const isDefault = s.family === DEFAULT_SETTINGS.family && s.maxThreads === DEFAULT_SETTINGS.maxThreads && s.shape === DEFAULT_SETTINGS.shape;
+  const isDefault = s.family === DEFAULT_SETTINGS.family && s.shape === DEFAULT_SETTINGS.shape;
   return (
     <div className="card explore-card">
       <h2>Find a new braid</h2>
+      <DiskSelect />
       <label>
         Family
         <select value={s.family} onChange={e => set('family', e.target.value as FamilyChoice)}>
@@ -41,22 +43,6 @@ export function ExploreCard({ settings: s, onChange, onExplore, busy, status }: 
             </option>
           ))}
         </select>
-      </label>
-      <label title="The most threads a new pattern may use">
-        <span className="row">
-          Threads{' '}
-          <span>
-            up to <b>{s.maxThreads}</b>
-          </span>
-        </span>
-        <input
-          type="range"
-          min={THREADS.min}
-          max={THREADS.max}
-          value={s.maxThreads}
-          aria-valuetext={`up to ${s.maxThreads} threads`}
-          onChange={e => set('maxThreads', Number(e.target.value))}
-        />
       </label>
       <label>
         Shape

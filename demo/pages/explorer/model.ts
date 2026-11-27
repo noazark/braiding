@@ -1,6 +1,7 @@
 /** The explorer's own model: settings, the presets it starts with, and how finds are labeled. */
 import { pickOne, presets, randomInt, seeded, type Drift, type Family, type Random, type Weave } from 'kumihimo';
 import { colorize, isRound, keyOf, presetCard, withColors, type Card } from '../../lib/patternCards';
+import { smallestDisk } from '../../lib/myDisk';
 
 export { FAMILY_LABEL, cardFromFind, colorize, colorsOf, isRound, keyOf, waste, withColors, type Card } from '../../lib/patternCards';
 
@@ -18,11 +19,12 @@ export interface Settings {
 /** Where the settings card starts, and what Reset puts it back to. */
 export const DEFAULT_SETTINGS: Settings = {
   family: 'mixed',
-  maxThreads: 12,
+  // as many as your disk takes (see threadsFor); the feed's random searches pick fewer
+  maxThreads: 16,
   shape: 'any',
 };
 
-/** The range of the Threads slider. The generators make patterns of 4 to 16 threads. */
+/** How many threads the generators make: 4 to 16. */
 export const THREADS = { min: 4, max: 16 } as const;
 
 /** A fully random search (any family, 4 to 16 threads), keeping only the shape on show. */
@@ -85,23 +87,24 @@ export interface Filters {
   readonly liked: boolean;
   readonly weave: ReadonlySet<Weave>;
   readonly drift: ReadonlySet<Drift>;
-  readonly strands: ReadonlySet<number>;
+  /** The smallest disk a braid goes on (see smallestDisk). */
+  readonly disk: ReadonlySet<number>;
 }
 
 /** A trait the filter bar offers chips for. */
-export type TraitKey = 'weave' | 'drift' | 'strands';
+export type TraitKey = 'weave' | 'drift' | 'disk';
 export const TRAITS: readonly [TraitKey, string][] = [
   ['weave', 'Weave'],
   ['drift', 'Drift'],
-  ['strands', 'Threads'],
+  ['disk', 'Disk'],
 ];
 
-export const NO_FILTERS: Filters = { liked: false, weave: new Set(), drift: new Set(), strands: new Set() };
+export const NO_FILTERS: Filters = { liked: false, weave: new Set(), drift: new Set(), disk: new Set() };
 
 export const isUnfiltered = (f: Filters): boolean => !f.liked && TRAITS.every(([k]) => f[k].size === 0);
 
 /** A card's value for a trait. */
-export const traitOf = (c: Card, k: TraitKey): string | number => c.profile.traits[k];
+export const traitOf = (c: Card, k: TraitKey): string | number => (k === 'disk' ? smallestDisk(c.setup) : c.profile.traits[k]);
 
 /** Whether a card passes the trait chips (any chip within a trait, every trait with chips on). */
 export const fitsTraits = (f: Filters) => (c: Card): boolean =>
