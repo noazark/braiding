@@ -102,6 +102,14 @@ describe('the disk', () => {
     expect([tl.steps[1]!.move!.from, tl.steps[1]!.move!.to]).toEqual([4, 1]);
   });
 
+  it('drops a thread into the gap past fewer threads, whatever the empty slots', () => {
+    // gap at slot 1; E+5 is the thread in slot 6. Back the short way (5 slots) passes four threads;
+    // on round the long way (11 slots) passes only the one in slot 13, so that's the way it goes
+    const tl = new Timeline(setup(16, [1, 2, 3, 4, 5, 12], 'E+5>E')).extend(1);
+    const m = tl.steps[1]!.move!;
+    expect([m.from, m.to, m.passed]).toEqual([5, 0, [5]]);
+  });
+
   it('plays a gap braid the same with spare empty slots', () => {
     // 7-strand over 2 on its own 8 slots, and spread round 16 with the gap at slot 1
     const tight = new Timeline(setup(8, [1, 2, 3, 4, 5, 6, 7], 'E+3>E')).extend(60);

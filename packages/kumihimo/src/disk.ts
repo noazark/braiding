@@ -121,17 +121,31 @@ export function* braid(setup: Setup): Generator<Step, Halt, undefined> {
     return L;
   };
 
-  /** Threads strictly past slot `a`, up to and including `b`, going the short way round. */
-  const passedBetween = (mover: number, a: number, b: number, except?: number) => {
+  /**
+   * Threads strictly past slot `a`, up to and including `b`: going the short way round, or the way
+   * `toward` says (1 clockwise, -1 counterclockwise).
+   */
+  const passedBetween = (mover: number, a: number, b: number, except?: number, toward?: number) => {
     const d = ringDistance(a, b, N);
-    const dir = Math.sign(d) || 1;
+    const dir = toward ?? (Math.sign(d) || 1);
+    const span = toward ? mod((b - a) * dir, N) : Math.abs(d);
     const ids: number[] = [];
     for (let t = 0; t < T; t++) {
       if (t === mover || t === except) continue;
       const o = mod((pos[t]! - a) * dir, N);
-      if (o > 0 && o <= Math.abs(d)) ids.push(t);
+      if (o > 0 && o <= span) ids.push(t);
     }
     return { dir, ids };
+  };
+  /**
+   * The way a move into the gap goes: past fewer threads, whatever the empty slots between (on a disk
+   * with one empty slot that's also the short way round, so nothing changes there). A tie goes the short
+   * way round, as any other move.
+   */
+  const intoGap = (mover: number, a: number, b: number): number | undefined => {
+    const cw = passedBetween(mover, a, b, undefined, 1).ids.length;
+    const ccw = passedBetween(mover, a, b, undefined, -1).ids.length;
+    return cw < ccw ? 1 : ccw < cw ? -1 : undefined;
   };
   const topOf = (slot: number) => {
     let best = -1;
@@ -172,7 +186,8 @@ export function* braid(setup: Setup): Generator<Step, Halt, undefined> {
     if (p < 0) return { reason: 'empty-slot', step: index, slot: a };
 
     if (t.kind === 'move') {
-      const { dir, ids } = passedBetween(p, a, b);
+      const toGap = t.to.kind === 'gap' && t.to.offset === 0 && a !== b;
+      const { dir, ids } = passedBetween(p, a, b, undefined, toGap ? intoGap(p, a, b) : undefined);
       const k = ids.length;
       const L = byColumn();
       const c0 = col[p]!;

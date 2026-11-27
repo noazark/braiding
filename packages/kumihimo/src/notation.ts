@@ -13,7 +13,9 @@
  * | `E+3>E`  | Gap-relative move: take the third thread clockwise from the gap and drop it in the gap.  |
  *
  * Counting from the gap skips empty slots: `E+3` is the third *thread* clockwise, however the threads
- * are spaced, so a gap pattern still works on a disk with more than one empty slot.
+ * are spaced, so a gap pattern still works on a disk with more than one empty slot. For the same
+ * reason a thread dropped into the gap goes the way past fewer threads (the short way round on a disk
+ * with one empty slot).
  *
  * Inside this package slots are **0-based indices** (`0 … N-1`). Only the written notation uses
  * the 1-based numbers printed on a disk; {@link parsePattern} and {@link formatPattern} convert.
