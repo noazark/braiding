@@ -27,8 +27,9 @@
   box-shadow: none;
 }
 .sitenav a:focus-visible {
-  outline: 3px solid #000;
-  outline-offset: 3px;
+  /* no ring round it (a halo): keyboard focus shows as a deeper shadow instead */
+  outline: none;
+  box-shadow: 4px 4px 0 #000;
 }
 
 /* the page header: title and site nav on one row, an optional subtitle below. The same size and
@@ -164,6 +165,8 @@
   text-underline-offset: 4px;
 }
 .pagehead-home:focus-visible {
-  outline: 3px solid #000;
-  outline-offset: 3px;
+  outline: none;
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 4px;
 }

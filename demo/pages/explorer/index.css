@@ -89,8 +89,9 @@ a.button {
 button:focus-visible,
 a.button:focus-visible,
 select:focus-visible {
-  outline: 3px solid #000;
-  outline-offset: 3px;
+  /* no ring round it (a halo): keyboard focus shows as a deeper shadow instead */
+  outline: none;
+  box-shadow: 5px 5px 0 #000;
 }
 button:disabled {
   opacity: 0.45;
@@ -218,8 +219,7 @@ button:disabled {
   box-shadow: 2px 2px 0 #000;
 }
 .explore-card input[type="range"]:focus-visible {
-  outline: 3px solid #000;
-  outline-offset: 3px;
+  outline: none;
 }
 
 /* the newest find pops in */

@@ -17,8 +17,10 @@
   box-shadow: 7px 7px 0 #000;
 }
 .card:focus-visible {
-  outline: 3px solid #000;
-  outline-offset: 4px;
+  /* no ring round it (a halo): keyboard focus lifts it, as hovering does */
+  outline: none;
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 #000;
 }
 .card .cv {
   height: 260px;
