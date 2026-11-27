@@ -8,3 +8,8 @@
   padding-left: max(2.2vw, 14px);
   padding-right: max(2.2vw, 14px);
 }
+
+/* no grey flash round a button, link or card when it's tapped (iOS Safari): each control has its own pressed look */
+* {
+  -webkit-tap-highlight-color: transparent;
+}

@@ -59,11 +59,6 @@ export function describeFindings(findings: readonly Finding[], name: (thread: nu
           tone,
           text: 'The pattern uses E (the gap), but every slot is full.',
         };
-      case 'gap-ambiguous':
-        return {
-          tone,
-          text: `The pattern uses E (the gap), but ${f.emptySlots} slots are empty. E follows whichever slot was emptied last, which may not be the gap you mean.`,
-        };
       case 'halted':
         return {
           tone,

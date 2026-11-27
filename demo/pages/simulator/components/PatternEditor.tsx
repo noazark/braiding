@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { presetGroupNames, presets } from 'kumihimo';
-import { HelpButton } from './HelpDialog';
+import { HelpButton, openHelp } from './HelpDialog';
 import { NotationHelp } from './NotationHelp';
 import { CUSTOM } from '../useDiskSetup';
 
@@ -69,7 +69,7 @@ export function PatternEditor({ preset, onPreset, slots, minSlots, onSlots, draf
         <div className="moves">
           <span className="moves-head">
             <label htmlFor="pat">Moves</label>
-            <HelpButton label="How to write moves" onClick={() => help.current?.showModal()} />
+            <HelpButton label="How to write moves" onClick={() => openHelp(help.current)} />
           </span>
           <textarea
             id="pat"

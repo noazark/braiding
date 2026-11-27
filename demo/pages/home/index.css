@@ -284,3 +284,8 @@ h2 {
     font-size: 16px;
   }
 }
+
+/* no grey flash round a card or link when it's tapped (iOS Safari): each has its own pressed look */
+* {
+  -webkit-tap-highlight-color: transparent;
+}

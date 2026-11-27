@@ -18,7 +18,7 @@ N`):
 | `1>15`  | Move the thread in slot 1 to slot 15. |
 | `3*4`   | Swap the threads in slots 3 and 4. |
 | `R-8`   | Turn the disk by 8 slots. |
-| `E+3>E` | Move the third thread past the empty slot into it. |
+| `E+3>E` | Move the third thread past the empty slot into it (counting threads, not slots). |
 
 ```ts
 import { parsePattern } from 'kumihimo';

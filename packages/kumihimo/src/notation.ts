@@ -12,6 +12,9 @@
  * | `E`      | **The gap**: the slot emptied most recently (at the start, the first empty slot).        |
  * | `E+3>E`  | Gap-relative move: take the third thread clockwise from the gap and drop it in the gap.  |
  *
+ * Counting from the gap skips empty slots: `E+3` is the third *thread* clockwise, however the threads
+ * are spaced, so a gap pattern still works on a disk with more than one empty slot.
+ *
  * Inside this package slots are **0-based indices** (`0 … N-1`). Only the written notation uses
  * the 1-based numbers printed on a disk; {@link parsePattern} and {@link formatPattern} convert.
  *
@@ -24,7 +27,7 @@ import { mod } from './ring.js';
 export type SlotRef =
   /** A slot by its 0-based index, as written before any disk turns are applied. */
   | { readonly kind: 'slot'; readonly index: number }
-  /** A slot `offset` places clockwise from the gap (negative = counterclockwise). `E` is offset 0. */
+  /** The `offset`th thread clockwise from the gap (negative = counterclockwise), skipping empty slots. `E` is offset 0. */
   | { readonly kind: 'gap'; readonly offset: number };
 
 /** A thread move: `a>b` (move) or `a*b` (swap). */

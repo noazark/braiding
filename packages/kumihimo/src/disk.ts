@@ -138,7 +138,19 @@ export function* braid(setup: Setup): Generator<Step, Halt, undefined> {
     for (let k = 0; k < T; k++) if (pos[k] === slot && (best < 0 || stamp[k]! > stamp[best]!)) best = k;
     return best;
   };
-  const resolve = (r: SlotRef) => (r.kind === 'gap' ? mod(gap + r.offset, N) : mod(r.index + turn, N));
+  /**
+   * The slot of the `k`th thread clockwise from the gap (counterclockwise if negative), skipping empty
+   * slots, so a gap pattern plays the same however many spare slots the disk has. `E` itself is the gap.
+   */
+  const fromGap = (k: number) => {
+    if (k === 0) return gap;
+    const dir = Math.sign(k);
+    const held = new Set(pos);
+    const ring: number[] = [];
+    for (let j = 1; j < N; j++) if (held.has(mod(gap + dir * j, N))) ring.push(mod(gap + dir * j, N));
+    return ring.length ? ring[(Math.abs(k) - 1) % ring.length]! : gap;
+  };
+  const resolve = (r: SlotRef) => (r.kind === 'gap' ? fromGap(r.offset) : mod(r.index + turn, N));
   const snapshot = (move: Move | null): Step =>
     Object.freeze({ index: index++, positions: Object.freeze(pos.slice()), columns: Object.freeze(col.slice()), turn, gap, move });
 

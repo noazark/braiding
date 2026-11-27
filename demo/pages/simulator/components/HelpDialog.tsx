@@ -15,16 +15,25 @@ export function HelpDialog({ ref, title, children }: HelpDialogProps) {
   useLightDismissFallback(ref as RefObject<HTMLDialogElement | null>);
   return (
     // closedby="any": a click outside closes it too
-    <dialog className="helpdlg" ref={ref} aria-labelledby={id} {...({ closedby: 'any' } as object)}>
+    // tabIndex: the dialog itself takes focus on opening (openHelp), so Close doesn't open wearing a focus ring
+    <dialog className="helpdlg" ref={ref} aria-labelledby={id} tabIndex={-1} {...({ closedby: 'any' } as object)}>
       <h1 id={id}>{title}</h1>
       {children}
       <form method="dialog">
-        <button className="pri" autoFocus>
-          Close
-        </button>
+        <button className="pri">Close</button>
       </form>
     </dialog>
   );
+}
+
+/**
+ * Open a help dialog with focus on the dialog itself rather than its first button: Esc still closes it,
+ * Tab still reaches Close, but nothing shows a focus ring until the keyboard is used.
+ */
+export function openHelp(dialog: HTMLDialogElement | null) {
+  if (!dialog) return;
+  dialog.showModal();
+  dialog.focus();
 }
 
 /** A small round (?) that opens a help dialog. */

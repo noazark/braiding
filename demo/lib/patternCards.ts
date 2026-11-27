@@ -2,7 +2,8 @@
  * Pattern cards (see GLOSSARY.md): a braid that makes a real cord, as a disk setup plus what the
  * engine found out about it. The explorer's grid is made of them, and the home page shows a few.
  */
-import { pickOne, profileNotation, randomInt, type BraidProfile, type Family, type Find, type Preset, type Random } from 'kumihimo';
+import { profileNotation, type BraidProfile, type Family, type Find, type Preset, type Random } from 'kumihimo';
+import { colorway } from './colorways';
 import { fromPreset, type DiskSetup } from './diskSetup';
 import { PALETTE } from './palette';
 
@@ -33,14 +34,8 @@ export const waste = ({ profile }: { profile: BraidProfile }): number => profile
 /** Each thread's color, by thread id. */
 export const colorsOf = (c: Card): string[] => c.setup.threads.map(t => t.color);
 
-/** A coloring that shows the structure: 2–4 palette colors, alternating, in pairs, or in blocks. */
-export function colorize(threads: number, random: Random): string[] {
-  const order = [0, 5, 2, 1, 3, 4, 6];
-  const k = randomInt(random, 2, 4);
-  const base = [...order].sort(() => random() - 0.5).slice(0, k);
-  const mode = pickOne(random, ['pairs', 'alt', 'blocks'] as const);
-  return [...Array(threads).keys()].map(i => PALETTE[base[mode === 'alt' ? i % k : mode === 'pairs' ? Math.floor(i / 2) % k : Math.floor((i * k) / threads)]!]!);
-}
+/** A random coloring of a random kind (solid, a single strand, pairs…; see colorways.ts), one color per thread. */
+export const colorize = (threads: number, random: Random): string[] => colorway(threads, random).colors;
 
 /** The same card in new colors, one per thread. */
 export const withColors = (c: Card, colors: readonly string[]): Card => ({

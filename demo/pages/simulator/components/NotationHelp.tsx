@@ -21,7 +21,7 @@ export function NotationHelp({ ref }: { ref: Ref<HTMLDialogElement> }) {
           </tr>
           <tr>
             <td>E</td>
-            <td>The empty slot: the one most recently vacated (at the start, the first empty slot). E+3 counts 3 slots clockwise from it.</td>
+            <td>The empty slot: the one most recently vacated (at the start, the first empty slot). E+3 is the third thread clockwise from it, skipping any other empty slots.</td>
           </tr>
           <tr>
             <td>E+3&gt;E</td>

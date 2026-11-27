@@ -503,9 +503,10 @@ textarea:focus {
 .status b {
   color: var(--acc);
 }
-/* what the step did, centered under the play controls */
-.ctl.transport + .status {
+/* what the step did, centered under the disk */
+.stepline {
   text-align: center;
+  margin: 0 0 14px;
 }
 .err {
   color: var(--acc);
@@ -1012,7 +1013,8 @@ td:first-child {
   }
   .dkgrid {
     --dgap: 32px;
-    --dctl: 60px;
+    /* the palette row and the step line under the disk */
+    --dctl: 96px;
     --dsz: min(
       var(--disk),
       100cqh - var(--dctl) - 2 * var(--dgap),
@@ -1039,7 +1041,7 @@ td:first-child {
   .diskcol .diskwrap {
     flex: none;
     width: var(--dsz);
-    margin: 0 auto 18px;
+    margin: 0 auto 10px;
   }
   .diskcol .thr {
     width: var(--dsz);
@@ -1181,6 +1183,10 @@ dialog.helpdlg {
   background: var(--panel);
   color: var(--ink);
 }
+/* it takes focus itself on opening; its own border is enough to show where you are */
+dialog.helpdlg:focus {
+  outline: none;
+}
 /* scrolling in the dialog or over the backdrop stays out of the page behind */
 dialog.helpdlg:modal {
   overscroll-behavior: contain;
@@ -1257,17 +1263,18 @@ dialog.helpdlg p {
   .diskwrap {
     order: 1;
   }
-  .thr {
+  .stepline {
     order: 2;
+    margin: 10px 0 0;
+  }
+  .thr {
+    order: 3;
     margin-top: 14px;
   }
   .ctl.transport,
   .ctrlcol .ctl.transport {
-    order: 3;
-    margin-top: 14px;
-  }
-  .ctl.transport + .status {
     order: 4;
+    margin-top: 14px;
   }
   .panelhead {
     order: 5;
@@ -1330,10 +1337,7 @@ dialog.helpdlg p {
   .ctl.transport,
   .ctrlcol .ctl.transport {
     margin-top: 26px;
-    gap: 12px;
-  }
-  .ctl.transport + .status {
-    margin-top: 12px;
     margin-bottom: 10px;
+    gap: 12px;
   }
 }

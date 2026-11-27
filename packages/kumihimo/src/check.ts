@@ -10,7 +10,6 @@
  * | --------------- | ----- | --------------------------------------------------------------------- |
  * | `no-threads`    | error | Nothing on the disk.                                                  |
  * | `gap-but-full`  | error | The pattern uses `E` but there's no empty slot.                       |
- * | `gap-ambiguous` | warn  | The pattern uses `E` and more than one slot is empty.                 |
  * | `halted`        | error | A move lifts from an empty slot, so the pattern stops there.          |
  * | `disconnected`  | error | The threads form separate groups that never cross: several cords.     |
  * | `loose`         | warn  | Some threads never cross or move: they hang straight down.            |
@@ -43,7 +42,6 @@ export type Scope = { readonly kind: 'repeat' } | { readonly kind: 'first'; read
 export type Finding =
   | { readonly code: 'no-threads'; readonly level: 'error' }
   | { readonly code: 'gap-but-full'; readonly level: 'error' }
-  | { readonly code: 'gap-ambiguous'; readonly level: 'warn'; readonly emptySlots: number }
   | { readonly code: 'halted'; readonly level: 'error'; readonly halt: Halt; readonly step: number }
   | { readonly code: 'disconnected'; readonly level: 'error'; readonly groups: readonly (readonly number[])[] }
   | { readonly code: 'loose'; readonly level: 'warn'; readonly threads: readonly number[] }
@@ -86,7 +84,6 @@ export function checkPattern(setup: Setup | Timeline, options: CheckOptions = {}
   const gapped = usesGap(pattern);
   const empty = N - new Set(threads).size;
   if (gapped && empty === 0) out.push({ code: 'gap-but-full', level: 'error' });
-  if (gapped && empty > 1) out.push({ code: 'gap-ambiguous', level: 'warn', emptySlots: empty });
 
   // run until the arrangement repeats
   const rep = findRepeat(tl, limit);

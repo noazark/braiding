@@ -95,6 +95,19 @@ describe('the disk', () => {
     // the gap starts at slot 8 (index 7); E+3 is index 2
     expect(tl.steps.slice(1).map(s => [s.move!.from, s.move!.to])).toEqual([[2, 7], [5, 2]]);
   });
+
+  it('counts threads from E, skipping other empty slots', () => {
+    // threads in every other slot, so the gap starts at slot 2 (index 1): E+2 is the second thread on, in slot 5
+    const tl = new Timeline(setup(8, [0, 2, 4, 6], 'E+2>E')).extend(1);
+    expect([tl.steps[1]!.move!.from, tl.steps[1]!.move!.to]).toEqual([4, 1]);
+  });
+
+  it('plays a gap braid the same with spare empty slots', () => {
+    // 7-strand over 2 on its own 8 slots, and spread round 16 with the gap at slot 1
+    const tight = new Timeline(setup(8, [1, 2, 3, 4, 5, 6, 7], 'E+3>E')).extend(60);
+    const loose = new Timeline(setup(16, [2, 4, 6, 8, 10, 12, 14], 'E+3>E')).extend(60);
+    expect(loose.steps.map(s => s.columns)).toEqual(tight.steps.map(s => s.columns));
+  });
 });
 
 describe('braid words', () => {

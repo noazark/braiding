@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { presets } from 'kumihimo';
 import { fromLink, fromPreset, scaleSetup, snapSlots, type DiskSetup } from '../../lib/diskSetup';
-import { PALETTE } from '../../lib/palette';
+import { colorway } from '../../lib/colorways';
 import type { Edit } from './model';
 
 /** Preset index, or {@link CUSTOM} once the disk or pattern has been changed by hand. */
@@ -100,19 +100,24 @@ export function useDiskSetup() {
     }));
   }, []);
 
-  /** Random palette colors, never all the same. */
+  /** New colors: a random colorway (solid, a single strand, pairs…), laid round the disk in slot order. */
   const shuffle = useCallback(() => {
     setLoaded(l => {
       const ts = l.setup.threads;
       if (!ts.length) return l;
-      let cs: string[];
-      do cs = ts.map(() => PALETTE[Math.floor(Math.random() * PALETTE.length)]!);
-      while (ts.length > 1 && new Set(cs).size < 2);
+      const { colors } = colorway(ts.length, Math.random);
+      // round the disk from just past its widest empty stretch, so pairs and blocks match the groups threads sit in
+      const sorted = ts.map((_, i) => i).sort((a, b) => ts[a]!.slot - ts[b]!.slot);
+      const space = (k: number) => (ts[sorted[k]!]!.slot - ts[sorted[(k + sorted.length - 1) % sorted.length]!]!.slot + l.setup.slots) % l.setup.slots;
+      let start = 0;
+      for (let k = 1; k < sorted.length; k++) if (space(k) > space(start)) start = k;
+      const ring = [...sorted.slice(start), ...sorted.slice(0, start)];
+      const color = new Map(ring.map((i, k) => [i, colors[k]!]));
       return {
         ...l,
         setup: {
           ...l.setup,
-          threads: ts.map((t, i) => ({ ...t, color: cs[i]! })),
+          threads: ts.map((t, i) => ({ ...t, color: color.get(i)! })),
         },
       };
     });

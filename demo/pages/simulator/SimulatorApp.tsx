@@ -9,7 +9,7 @@ import { SimulatorPreview } from '../../components/SimulatorPreview';
 import { DragGhost } from './components/DragGhost';
 import { PatternEditor } from './components/PatternEditor';
 import { ThreadPalette } from './components/ThreadPalette';
-import { Transport } from './components/Transport';
+import { StepStatus, Transport } from './components/Transport';
 import { PatternSteps, stepsPlayed } from '../../components/PatternSteps';
 import type { Brush } from './model';
 import { useDiskDrag } from './useDiskDrag';
@@ -80,6 +80,7 @@ export function SimulatorApp() {
                   onPointerDown={onDiskPointerDown}
                 />
               </div>
+              <StepStatus step={step} threads={threads.length} slots={slots} error={error} atEnd={playhead.step === timeline.last} />
               <ThreadPalette
                 threads={threads}
                 brush={brush}
@@ -107,10 +108,6 @@ export function SimulatorApp() {
                 playing={playhead.playing}
                 speed={playhead.speed}
                 onSpeed={playhead.setSpeed}
-                threads={threads.length}
-                slots={slots}
-                error={error}
-                atEnd={playhead.step === timeline.last}
                 onGo={n => {
                   playhead.stop();
                   playhead.go(n);
